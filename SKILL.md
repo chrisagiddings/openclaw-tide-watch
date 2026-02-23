@@ -129,13 +129,20 @@ I'll:
 
 When you add Tide Watch to your `HEARTBEAT.md`, I automatically:
 
-1. **Check capacity on schedule** (default: every hour)
+1. **Parse your configuration** (from AGENTS.md)
+   - Check frequency: How often to monitor
+   - Warning thresholds: When to warn you
+   - Backup settings: When to backup, retention, compression
+   - See [PARSING.md](PARSING.md) for detailed parsing logic
+
+2. **Check capacity on schedule** (default: every hour)
    - Run `session_status` to get token usage
    - Calculate percentage: `(tokens_used / tokens_max) * 100`
 
-2. **Compare against your thresholds**
-   - Read configured thresholds from AGENTS.md
+3. **Compare against your thresholds**
+   - Use your configured thresholds (not hardcoded defaults)
    - Determine which threshold(s) have been crossed
+   - Assign severity dynamically based on position (first=🟡, last=🚨)
 
 3. **Warn you (once per threshold)**
    - Issue warning message for new threshold crossings

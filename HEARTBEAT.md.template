@@ -3,8 +3,42 @@
 **Check session capacity and warn at configured thresholds.**
 
 ### Schedule
-- Frequency: Every 1 hour (customize in AGENTS.md)
-- Next check: (tracked internally)
+
+**Parse check frequency from AGENTS.md:**
+
+**Look for monitoring schedule section:**
+```markdown
+**Monitoring schedule:**
+- Check frequency: Every 1 hour
+```
+
+**Extract frequency:**
+- Look for: `- Check frequency: Every N minutes` or `Every N hours`
+- Extract number and unit
+- Also support: `manual` (disable heartbeat checks)
+
+**Parse format:**
+- `Every 15 minutes` → 15 minutes
+- `Every 30 minutes` → 30 minutes
+- `Every 1 hour` → 60 minutes
+- `Every 2 hours` → 120 minutes
+- `manual` → Skip heartbeat checks entirely
+
+**Validate:**
+- Range: 5 minutes to 6 hours (360 minutes)
+- If outside range, fall back to default: 60 minutes (1 hour)
+- If `manual`, skip all automatic checks
+
+**Store parsed frequency:**
+```
+check_frequency_minutes = 60  (or custom value)
+heartbeat_enabled = true  (false if 'manual')
+```
+
+**If heartbeat disabled (manual):**
+- Skip all automatic monitoring
+- Return: "Tide Watch heartbeat disabled (frequency set to 'manual')"
+- User must explicitly ask for capacity checks
 
 ### Monitoring Tasks
 
@@ -14,23 +48,93 @@
    Calculate: percentage = (tokens_used / tokens_max) * 100
    ```
 
-2. **Compare against warning thresholds:**
-   - Read thresholds from AGENTS.md (default: 75%, 85%, 90%, 95%)
+2. **Parse warning thresholds from AGENTS.md:**
+   
+   **Look for the Tide Watch configuration section:**
+   ```markdown
+   ## 🌊 TIDE WATCH: Context Window Monitoring
+   
+   **Warning thresholds:**
+   - **75%**: 🟡 ...
+   - **85%**: 🟠 ...
+   - **90%**: 🔴 ...
+   - **95%**: 🚨 ...
+   ```
+   
+   **Extract threshold percentages:**
+   - Scan for lines matching pattern: `- **XX%**:` where XX is a number
+   - Extract all percentage values in order
+   - Example: `[75, 85, 90, 95]`
+   
+   **Validate extracted thresholds:**
+   - Must be ascending order (each threshold > previous)
+   - Range: 50-99% (reasonable capacity levels)
+   - Minimum 2 thresholds, maximum 6 thresholds
+   - All values must be integers
+   
+   **If validation fails:**
+   - Log warning: "Invalid threshold configuration, using defaults"
+   - Fall back to defaults: `[75, 85, 90, 95]`
+   - Continue with monitoring using defaults
+   
+   **Store parsed thresholds for this session:**
+   ```
+   session_thresholds = [75, 85, 90, 95]  (or custom values)
+   ```
+
+3. **Compare current capacity against parsed thresholds:**
    - Determine which threshold(s) have been crossed
    - Track which thresholds already warned in this session
+   - Only consider thresholds not yet warned about
 
-3. **Issue warnings for new thresholds:**
-   - 🟡 **75%**: "Heads up: Context at 75%. Consider wrapping up or switching channels soon."
-   - 🟠 **85%**: "Context at 85%. Recommend finishing current task and resetting session."
-   - 🔴 **90%**: "Context at 90%! Session will lock at 100%. Ready to help you reset?"
-   - 🚨 **95%**: "CRITICAL: Context at 95%! Save important info to memory NOW and reset."
+4. **Issue warnings for new thresholds:**
+   
+   **Determine warning severity based on position:**
+   - First threshold (lowest): 🟡 Early warning
+   - Middle threshold(s): 🟠 Action recommended  
+   - Second-to-last threshold: 🔴 Urgent
+   - Last threshold (highest): 🚨 Critical
+   
+   **Generate appropriate warning message:**
+   ```
+   For early warning (🟡):
+   "Heads up: Context at {threshold}%. Consider wrapping up or switching channels soon."
+   
+   For action recommended (🟠):
+   "Context at {threshold}%. Recommend finishing current task and resetting session."
+   
+   For urgent (🔴):
+   "Context at {threshold}%! Session will lock at 100%. Ready to help you reset?"
+   
+   For critical (🚨):
+   "CRITICAL: Context at {threshold}%! Save important info to memory NOW and reset."
+   ```
+   
+   **Examples with different threshold configurations:**
+   
+   Default `[75, 85, 90, 95]`:
+   - 75% = 🟡 Early warning
+   - 85% = 🟠 Action recommended
+   - 90% = 🔴 Urgent
+   - 95% = 🚨 Critical
+   
+   Minimalist `[80, 95]`:
+   - 80% = 🟡 Early warning (first)
+   - 95% = 🚨 Critical (last)
+   
+   Conservative `[60, 70, 80, 90]`:
+   - 60% = 🟡 Early warning (first)
+   - 70% = 🟠 Action recommended (middle)
+   - 80% = 🟠 Action recommended (middle)
+   - 90% = 🚨 Critical (last)
 
-4. **Suggest actions:**
-   - At 90%+: Offer to save context to memory/YYYY-MM-DD.md
-   - At 90%+: Provide session reset command
-   - At 95%+: Be insistent about saving and resetting
+5. **Suggest actions based on severity:**
+   - At urgent thresholds (🔴): Offer to save context to memory/YYYY-MM-DD.md
+   - At urgent thresholds (🔴): Provide session reset command
+   - At critical threshold (🚨): Be insistent about saving and resetting
+   - At critical threshold (🚨): Automatically offer full reset workflow
 
-5. **Track threshold crossings:**
+6. **Track threshold crossings:**
    - Only warn once per threshold per session
    - Reset tracking when session is reset
    - Store tracking state in memory (ephemeral, per-session)
@@ -39,13 +143,44 @@
 
 **⚠️ Check if backups are enabled first:**
 
-1. **Read backup configuration from AGENTS.md:**
+1. **Parse backup configuration from AGENTS.md:**
+   
+   **Look for the auto-backup section:**
+   ```markdown
+   **Auto-backup:**
+   - Enabled: true
+   - Trigger at thresholds: [90, 95]
+   - Retention: 7 days
+   - Compress: false
    ```
-   Auto-backup enabled: true/false
-   Trigger at thresholds: [90, 95]  (default)
-   Retention: 7 days
-   Compress: true/false
-   ```
+   
+   **Extract configuration values:**
+   
+   **Enabled:**
+   - Look for: `- Enabled: true` or `- Enabled: false`
+   - Default: `true` if not found
+   
+   **Trigger thresholds:**
+   - Look for: `- Trigger at thresholds: [XX, YY, ZZ]`
+   - Extract array of numbers from brackets
+   - Example: `[90, 95]`
+   - Default: `[90, 95]` if not found
+   
+   **Retention:**
+   - Look for: `- Retention: N days` where N is a number
+   - Extract number of days
+   - Range: 1-365 days
+   - Default: `7` if not found
+   
+   **Compress:**
+   - Look for: `- Compress: true` or `- Compress: false`
+   - Default: `false` if not found
+   
+   **Validate backup trigger thresholds:**
+   - Must be subset of warning thresholds
+   - Must be in ascending order
+   - Range: 50-99%
+   - If validation fails, fall back to `[90, 95]`
 
 2. **If backups are disabled (`Enabled: false`):**
    - Skip this entire Auto-Backup section

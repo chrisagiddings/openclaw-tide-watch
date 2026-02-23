@@ -119,6 +119,8 @@ Your agent will:
 
 ## ⚙️ Configuration
 
+Tide Watch **parses your configuration dynamically** from `AGENTS.md`. Changes take effect on the next check—no need to restart OpenClaw!
+
 Default settings work for most users. To customize, edit the Tide Watch section in your `AGENTS.md`:
 
 ### Customize Configuration
@@ -173,6 +175,17 @@ Override settings per channel (advanced):
 - Thresholds: 85%, 95% (lighter warnings)
 - Frequency: Every 2 hours
 ```
+
+### How Configuration Parsing Works
+
+Tide Watch dynamically reads your `AGENTS.md` configuration every time it checks capacity:
+
+- ✅ **Changes take effect immediately** (no restart needed)
+- ✅ **Validation with fallbacks** (invalid config = use defaults)
+- ✅ **Dynamic severity assignment** (first threshold = 🟡, last = 🚨)
+- ✅ **Flexible formats** (accommodates different threshold counts)
+
+**Detailed parsing documentation:** See [PARSING.md](PARSING.md) for validation rules, fallback behavior, and troubleshooting.
 
 ## 🎭 Real-World Example
 
