@@ -1,0 +1,26 @@
+{
+  "name": "tide-watch",
+  "version": "1.0.0",
+  "description": "Proactive session capacity monitoring for OpenClaw",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisagiddings/openclaw-tide-watch.git"
+  },
+  "keywords": [
+    "openclaw",
+    "monitoring",
+    "session",
+    "capacity",
+    "context-window"
+  ],
+  "author": "Chris Giddings",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chrisagiddings/openclaw-tide-watch/issues"
+  },
+  "homepage": "https://github.com/chrisagiddings/openclaw-tide-watch#readme"
+}
