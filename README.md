@@ -40,6 +40,11 @@ git clone https://github.com/chrisagiddings/openclaw-tide-watch tide-watch
 cat tide-watch/AGENTS.md.template >> ../AGENTS.md
 ```
 
+3. Add the heartbeat task to your `HEARTBEAT.md`:
+```bash
+cat tide-watch/HEARTBEAT.md.template >> ../HEARTBEAT.md
+```
+
 ## 🚀 Quick Start
 
 Once installed, Tide Watch automatically:
@@ -134,11 +139,32 @@ Override settings per channel (advanced):
 
 ## 🔧 How It Works
 
-1. **Monitoring**: Uses OpenClaw's `session_status` tool
-2. **Thresholds**: Percentage-based (works with any context size)
-3. **Silent**: Only warns when approaching limits
-4. **Model-agnostic**: Works with Anthropic, OpenAI, DeepSeek, etc.
-5. **Non-intrusive**: Doesn't interrupt normal conversations
+### Automatic Monitoring (Heartbeat Mode)
+
+Once configured in `HEARTBEAT.md`, Tide Watch runs automatically:
+
+1. **Schedule**: Checks capacity at configured interval (default: hourly)
+2. **Check**: Uses OpenClaw's `session_status` tool to read token usage
+3. **Calculate**: Determines percentage: `(tokens_used / tokens_max) * 100`
+4. **Compare**: Checks against your configured thresholds
+5. **Warn**: Issues warning if threshold crossed (once per threshold)
+6. **Suggest**: Provides actions (save to memory, switch channels, reset)
+7. **Silent**: Returns `HEARTBEAT_OK` when nothing needs attention
+
+### Manual Mode
+
+Disable heartbeat and check only when explicitly asked:
+```
+What's my current session capacity?
+Check context usage
+```
+
+### Features
+
+- **Percentage-based**: Works with any context size (200k, 1M, etc.)
+- **Model-agnostic**: Anthropic, OpenAI, DeepSeek, or any provider
+- **Stateful**: Tracks which thresholds warned, resets when session resets
+- **Non-intrusive**: Silent monitoring, only speaks up at thresholds
 
 ## 🌟 Features
 

@@ -22,7 +22,7 @@ Monitors your OpenClaw session context windows and warns you before they overflo
 
 ## Installation
 
-### Add Monitoring Directive
+### Step 1: Add Monitoring Directive to AGENTS.md
 
 Copy the directive template from `AGENTS.md.template` and add it to your workspace `AGENTS.md` file:
 
@@ -33,14 +33,40 @@ cat skills/tide-watch/AGENTS.md.template >> AGENTS.md
 
 Or manually add the monitoring section from the template.
 
-### Configure Thresholds (Optional)
+This tells me (your agent) what to look for and when to warn you.
 
-Default thresholds work for most users, but you can customize them in your `AGENTS.md`:
+### Step 2: Add Heartbeat Task to HEARTBEAT.md
 
-- Adjust warning percentages (75/85/90/95)
-- Change check frequency (default: hourly)
-- Customize warning messages
-- Add channel-specific overrides
+Copy the heartbeat template from `HEARTBEAT.md.template` and add it to your workspace `HEARTBEAT.md` file:
+
+```bash
+# From your workspace root (~/clawd or similar)
+cat skills/tide-watch/HEARTBEAT.md.template >> HEARTBEAT.md
+```
+
+Or manually add the Tide Watch heartbeat section from the template.
+
+This tells me to check capacity automatically on a schedule.
+
+### Step 3: Configure Settings (Optional)
+
+Default settings work for most users, but you can customize in your `AGENTS.md`:
+
+**Warning thresholds** (when to warn):
+- Adjust percentages (default: 75/85/90/95)
+- Range: 50-99%, ascending order, 2-6 thresholds
+
+**Check frequency** (how often to monitor):
+- Adjust interval (default: Every 1 hour)
+- Options: 15min, 30min, 1hr, 2hr, or 'manual'
+- Range: 5 minutes to 6 hours
+
+**Auto-backup** (future feature):
+- Enable/disable automatic backups
+- Set which thresholds trigger backups (default: [90, 95])
+
+**Channel-specific overrides** (advanced):
+- Different settings per channel (Discord vs. webchat vs. DM)
 
 ## Usage
 
@@ -78,11 +104,48 @@ I'll:
 
 ## How It Works
 
-- **Monitoring**: Uses `session_status` tool to check token usage
-- **Thresholds**: Configurable percentage-based warnings
-- **Actions**: Suggests memory saves, channel switches, or resets
-- **Model-agnostic**: Works with any provider (Anthropic, OpenAI, etc.)
+### Automatic Monitoring (Heartbeat)
+
+When you add Tide Watch to your `HEARTBEAT.md`, I automatically:
+
+1. **Check capacity on schedule** (default: every hour)
+   - Run `session_status` to get token usage
+   - Calculate percentage: `(tokens_used / tokens_max) * 100`
+
+2. **Compare against your thresholds**
+   - Read configured thresholds from AGENTS.md
+   - Determine which threshold(s) have been crossed
+
+3. **Warn you (once per threshold)**
+   - Issue warning message for new threshold crossings
+   - Track which thresholds already warned this session
+   - Don't repeat warnings if capacity stays at same level
+
+4. **Suggest actions**
+   - Save context to memory
+   - Switch to lower-usage channel
+   - Provide session reset commands
+   - Generate context restoration prompts
+
+5. **Return to silent mode**
+   - If capacity is below all thresholds, return `HEARTBEAT_OK`
+   - No output, no interruption
+
+### Manual Checks
+
+You can also ask me to check anytime:
+```
+What's my current session capacity?
+Check context usage
+Run session_status
+```
+
+### Key Features
+
+- **Model-agnostic**: Works with any provider (Anthropic, OpenAI, DeepSeek, etc.)
 - **Non-intrusive**: Silent checks, only speaks up at thresholds
+- **Configurable**: Adjust thresholds, frequency, and actions to your workflow
+- **Stateful**: Tracks which thresholds warned, resets tracking when session resets
 
 ## Why You Need This
 

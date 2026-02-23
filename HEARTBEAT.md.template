@@ -1,0 +1,86 @@
+## 🌊 Tide Watch - Session Capacity Monitoring
+
+**Check session capacity and warn at configured thresholds.**
+
+### Schedule
+- Frequency: Every 1 hour (customize in AGENTS.md)
+- Next check: (tracked internally)
+
+### Monitoring Tasks
+
+1. **Check current session capacity:**
+   ```
+   Run session_status
+   Calculate: percentage = (tokens_used / tokens_max) * 100
+   ```
+
+2. **Compare against warning thresholds:**
+   - Read thresholds from AGENTS.md (default: 75%, 85%, 90%, 95%)
+   - Determine which threshold(s) have been crossed
+   - Track which thresholds already warned in this session
+
+3. **Issue warnings for new thresholds:**
+   - 🟡 **75%**: "Heads up: Context at 75%. Consider wrapping up or switching channels soon."
+   - 🟠 **85%**: "Context at 85%. Recommend finishing current task and resetting session."
+   - 🔴 **90%**: "Context at 90%! Session will lock at 100%. Ready to help you reset?"
+   - 🚨 **95%**: "CRITICAL: Context at 95%! Save important info to memory NOW and reset."
+
+4. **Suggest actions:**
+   - At 90%+: Offer to save context to memory/YYYY-MM-DD.md
+   - At 90%+: Provide session reset command
+   - At 95%+: Be insistent about saving and resetting
+
+5. **Track threshold crossings:**
+   - Only warn once per threshold per session
+   - Reset tracking when session is reset
+   - Store tracking state in memory (ephemeral, per-session)
+
+### Auto-Backup (future feature - when implemented)
+- Check if capacity crossed any backup trigger thresholds
+- If yes, and not already backed up at this threshold:
+  - Copy session file to backups folder
+  - Format: `<session-id>-<threshold>-<timestamp>.jsonl`
+  - Verify backup integrity
+  - Log backup completion
+
+### Behavior Notes
+
+**Silent operation:**
+- Only speak up when threshold crossed
+- No output if capacity is below all thresholds
+- Return HEARTBEAT_OK when nothing needs attention
+
+**Warning discipline:**
+- One warning per threshold per session
+- Don't repeat warnings if capacity stays at same level
+- Reset warning state if capacity drops below threshold (user cleared context)
+
+**Critical threshold (95%+):**
+- Automatically offer to save context to memory
+- Provide full session reset workflow
+- Be more insistent than lower thresholds
+
+### Configuration
+
+Users configure monitoring in `AGENTS.md`:
+
+```markdown
+## 🌊 TIDE WATCH: Context Window Monitoring
+
+**Monitoring schedule:**
+- Check frequency: Every 1 hour
+
+**Warning thresholds:**
+- **75%**: 🟡 Early warning
+- **85%**: 🟠 Action recommended
+- **90%**: 🔴 Urgent
+- **95%**: 🚨 Critical
+
+**Auto-backup:** (future)
+- Enabled: false
+- Trigger at thresholds: [90, 95]
+```
+
+---
+
+**Skill:** [Tide Watch](https://github.com/chrisagiddings/openclaw-tide-watch) 🌊
