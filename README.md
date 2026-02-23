@@ -2,6 +2,8 @@
 
 **Proactive session capacity monitoring for OpenClaw.**
 
+> ⚠️ **Pre-release:** This skill is undergoing security scanning and testing. Not yet published to ClawHub. Track progress in [issue #10](https://github.com/chrisagiddings/openclaw-tide-watch/issues/10).
+
 Never lose work to a full context window again. Tide Watch monitors your OpenClaw sessions and warns you before capacity limits lock you out.
 
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-Compatible-blue)](https://openclaw.ai)
