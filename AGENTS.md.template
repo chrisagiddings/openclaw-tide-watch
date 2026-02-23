@@ -7,11 +7,17 @@
 - Check during **intensive project work** (reading many files, generating long outputs)
 - Check when I notice **unusually long conversations** accumulating
 
-**Warning thresholds:**
+**Warning thresholds:** (customize or use defaults)
 - **75%** (150k/200k): 🟡 "Heads up: Context at 75%. Consider wrapping up or switching channels soon."
 - **85%** (170k/200k): 🟠 "Context at 85%. Recommend finishing current task and resetting session."
 - **90%** (180k/200k): 🔴 "Context at 90%! Session will lock at 100%. Ready to help you reset?"
 - **95%** (190k/200k): 🚨 "CRITICAL: Context at 95%! Save important info to memory NOW and reset."
+
+**Auto-backup:** (future feature - coming soon)
+- Enabled: false
+- Trigger at thresholds: [90, 95]
+- Retention: 7 days
+- Compress: true
 
 **Actions to suggest:**
 1. **Memory save**: Offer to save current context/decisions to `memory/YYYY-MM-DD.md` or project work logs
