@@ -37,7 +37,7 @@
 
 ### Auto-Backup
 
-**Check if backup is enabled and triggered:**
+**⚠️ Check if backups are enabled first:**
 
 1. **Read backup configuration from AGENTS.md:**
    ```
@@ -47,13 +47,18 @@
    Compress: true/false
    ```
 
-2. **Determine if backup should be triggered:**
-   - If backup disabled, skip this section
+2. **If backups are disabled (`Enabled: false`):**
+   - Skip this entire Auto-Backup section
+   - No backups will be created
+   - Proceed to next monitoring task
+   - Return: "Auto-backup is disabled (set Enabled: true to enable)"
+
+3. **If backups are enabled (`Enabled: true`), determine if backup should be triggered:**
    - Check current capacity against backup trigger thresholds
    - Track which thresholds have already triggered backups this session
    - Only backup once per threshold per session (don't re-backup at same level)
 
-3. **Execute backup when threshold crossed:**
+4. **Execute backup when threshold crossed:**
    
    **Determine session file location:**
    ```bash
@@ -114,7 +119,7 @@
    Don't re-backup at this threshold unless session is reset
    ```
 
-4. **Cleanup old backups (if retention configured):**
+5. **Cleanup old backups (if retention configured):**
    ```bash
    # Find backups older than retention days
    find ~/.openclaw/agents/main/sessions/backups/ \

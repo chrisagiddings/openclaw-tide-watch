@@ -154,7 +154,7 @@ Edit the Tide Watch section in your `AGENTS.md`:
 - **Conservative:** `[75, 85, 90, 95]` (backup at every warning)
 - **Moderate:** `[90, 95]` (default, key thresholds)
 - **Aggressive:** `[95]` (last-chance only)
-- **Disabled:** `Enabled: false`
+- **Disabled:** `Enabled: false` (no automatic backups, manual backup only)
 
 **Backup locations:**
 - Path: `~/.openclaw/agents/main/sessions/backups/`

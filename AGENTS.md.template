@@ -13,11 +13,14 @@
 - **90%** (180k/200k): 🔴 "Context at 90%! Session will lock at 100%. Ready to help you reset?"
 - **95%** (190k/200k): 🚨 "CRITICAL: Context at 95%! Save important info to memory NOW and reset."
 
-**Auto-backup:** (customize or use defaults)
-- Enabled: true
+**Auto-backup:** (customize or disable)
+- Enabled: true  # Set false to disable all automatic backups
 - Trigger at thresholds: [90, 95]  # Subset of warning thresholds
 - Retention: 7 days
 - Compress: false  # Set true to save disk space
+
+To disable automatic backups entirely, set:
+- Enabled: false
 
 **Actions to suggest:**
 1. **Memory save**: Offer to save current context/decisions to `memory/YYYY-MM-DD.md` or project work logs
