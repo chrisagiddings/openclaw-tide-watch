@@ -35,13 +35,136 @@
    - Reset tracking when session is reset
    - Store tracking state in memory (ephemeral, per-session)
 
-### Auto-Backup (future feature - when implemented)
-- Check if capacity crossed any backup trigger thresholds
-- If yes, and not already backed up at this threshold:
-  - Copy session file to backups folder
-  - Format: `<session-id>-<threshold>-<timestamp>.jsonl`
-  - Verify backup integrity
-  - Log backup completion
+### Auto-Backup
+
+**Check if backup is enabled and triggered:**
+
+1. **Read backup configuration from AGENTS.md:**
+   ```
+   Auto-backup enabled: true/false
+   Trigger at thresholds: [90, 95]  (default)
+   Retention: 7 days
+   Compress: true/false
+   ```
+
+2. **Determine if backup should be triggered:**
+   - If backup disabled, skip this section
+   - Check current capacity against backup trigger thresholds
+   - Track which thresholds have already triggered backups this session
+   - Only backup once per threshold per session (don't re-backup at same level)
+
+3. **Execute backup when threshold crossed:**
+   
+   **Determine session file location:**
+   ```bash
+   # Get current session key from session context
+   # Example: "agent:main:discord:channel:1471358153848389662"
+   
+   # Map to session file
+   # Format: ~/.openclaw/agents/<agent>/sessions/<session-id>.jsonl
+   # Example: ~/.openclaw/agents/main/sessions/6eff94ac-dde7-4621-acaf-66bb431db822.jsonl
+   ```
+   
+   **Create backup directory if needed:**
+   ```bash
+   mkdir -p ~/.openclaw/agents/main/sessions/backups
+   ```
+   
+   **Generate backup filename:**
+   ```
+   Format: <session-id>-<threshold>-<timestamp>.jsonl[.gz]
+   Example: 6eff94ac-90-20260223-170500.jsonl
+   Example (compressed): 6eff94ac-95-20260223-171200.jsonl.gz
+   
+   Timestamp format: YYYYMMDD-HHMMSS (local time)
+   Threshold: percentage that triggered backup (75, 85, 90, 95, etc.)
+   ```
+   
+   **Execute backup command:**
+   ```bash
+   # Without compression:
+   cp ~/.openclaw/agents/main/sessions/<session-id>.jsonl \
+      ~/.openclaw/agents/main/sessions/backups/<session-id>-<threshold>-<timestamp>.jsonl
+   
+   # With compression:
+   gzip -c ~/.openclaw/agents/main/sessions/<session-id>.jsonl \
+      > ~/.openclaw/agents/main/sessions/backups/<session-id>-<threshold>-<timestamp>.jsonl.gz
+   ```
+   
+   **Verify backup integrity:**
+   ```bash
+   # Check backup file exists and has content
+   ls -lh ~/.openclaw/agents/main/sessions/backups/<backup-filename>
+   
+   # Verify file size > 0
+   # If compressed, verify it can be decompressed
+   ```
+   
+   **Log backup completion:**
+   ```
+   ✅ Session backed up: <backup-filename>
+   Trigger: <threshold>% threshold crossed
+   Size: <file-size>
+   Location: ~/.openclaw/agents/main/sessions/backups/
+   ```
+   
+   **Mark threshold as backed up:**
+   ```
+   Track internally: threshold <X>% backup completed for this session
+   Don't re-backup at this threshold unless session is reset
+   ```
+
+4. **Cleanup old backups (if retention configured):**
+   ```bash
+   # Find backups older than retention days
+   find ~/.openclaw/agents/main/sessions/backups/ \
+     -name "*.jsonl*" \
+     -type f \
+     -mtime +<retention-days> \
+     -delete
+   
+   # Log cleanup
+   Removed N old backup(s) (retention: <retention-days> days)
+   ```
+
+### Backup Restoration
+
+**When user requests session restoration from backup:**
+
+1. **List available backups:**
+   ```bash
+   ls -lht ~/.openclaw/agents/main/sessions/backups/<session-id>-*.jsonl*
+   ```
+
+2. **Show backups with details:**
+   ```
+   Available backups for session <session-id>:
+   
+   1. 90% threshold - 2026-02-23 17:05 (1.6 MB)
+   2. 95% threshold - 2026-02-23 17:12 (1.7 MB)
+   
+   Which backup would you like to restore?
+   ```
+
+3. **Restore selected backup:**
+   ```bash
+   # If compressed, decompress first
+   gunzip -c ~/.openclaw/agents/main/sessions/backups/<backup-file>.gz \
+     > /tmp/restored-session.jsonl
+   
+   # Copy to session location
+   cp ~/.openclaw/agents/main/sessions/backups/<backup-file> \
+      ~/.openclaw/agents/main/sessions/<session-id>.jsonl
+   ```
+
+4. **Verify restoration:**
+   ```
+   ✅ Session restored from backup
+   Backup: <backup-filename>
+   Restored to: <session-file>
+   
+   Note: Restart OpenClaw gateway or reconnect to load restored session.
+   ```
 
 ### Behavior Notes
 

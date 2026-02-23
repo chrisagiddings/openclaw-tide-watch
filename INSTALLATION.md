@@ -55,7 +55,7 @@ The default configuration works for most users:
 
 - **Warning thresholds:** 75%, 85%, 90%, 95%
 - **Check frequency:** Every 1 hour
-- **Auto-backup:** Disabled (coming soon)
+- **Auto-backup:** Enabled, triggers at [90, 95], 7-day retention
 
 If defaults work for you, **you're done!** Tide Watch is now monitoring your sessions.
 
@@ -115,7 +115,63 @@ Then ask your agent to check capacity only when needed:
 What's my current session capacity?
 ```
 
-#### 3. Channel-Specific Settings (advanced)
+#### 3. Auto-Backup Configuration
+
+Configure automatic session backups:
+
+**Enable/disable backups:**
+```markdown
+**Auto-backup:**
+- Enabled: true  # Set false to disable
+```
+
+**Configure backup triggers:**
+```markdown
+**Auto-backup:**
+- Enabled: true
+- Trigger at thresholds: [90, 95]  # When to create backups
+```
+
+**Conservative (backup at every warning):**
+```markdown
+- Trigger at thresholds: [75, 85, 90, 95]
+```
+
+**Aggressive (last-chance only):**
+```markdown
+- Trigger at thresholds: [95]
+```
+
+**Configure retention:**
+```markdown
+**Auto-backup:**
+- Enabled: true
+- Trigger at thresholds: [90, 95]
+- Retention: 7 days  # Auto-delete backups older than this
+- Compress: false  # Set true to save disk space
+```
+
+**Longer retention (30 days):**
+```markdown
+- Retention: 30 days
+```
+
+**Restore from backup:**
+
+To restore a previous session state:
+```
+Show me available backups for this session
+Restore session from 90% backup
+```
+
+Your agent will guide you through the restoration process.
+
+**Backup locations:**
+- Path: `~/.openclaw/agents/main/sessions/backups/`
+- Format: `<session-id>-<threshold>-<timestamp>.jsonl`
+- Example: `6eff94ac-90-20260223-170500.jsonl`
+
+#### 4. Channel-Specific Settings (advanced)
 
 Different settings per channel:
 

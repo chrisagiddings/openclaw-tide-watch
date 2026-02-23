@@ -61,9 +61,11 @@ Default settings work for most users, but you can customize in your `AGENTS.md`:
 - Options: 15min, 30min, 1hr, 2hr, or 'manual'
 - Range: 5 minutes to 6 hours
 
-**Auto-backup** (future feature):
-- Enable/disable automatic backups
+**Auto-backup**:
+- Enable/disable automatic backups (default: enabled)
 - Set which thresholds trigger backups (default: [90, 95])
+- Configure retention (default: 7 days)
+- Enable compression to save disk space (default: off)
 
 **Channel-specific overrides** (advanced):
 - Different settings per channel (Discord vs. webchat vs. DM)
@@ -98,9 +100,28 @@ Help me reset this session and preserve context
 
 I'll:
 1. Save current work to memory
-2. Backup the session file
+2. Backup the session file (if not already backed up)
 3. Provide a context restoration prompt
 4. Reset the session
+
+### Restore from Backup
+
+If you need to restore a previous session state:
+
+```
+Show me available backups for this session
+Restore session from 90% backup
+```
+
+I'll:
+1. List available backups with timestamps and sizes
+2. Restore the selected backup
+3. Guide you through reconnecting to load the restored session
+
+**Backup locations:**
+- Path: `~/.openclaw/agents/main/sessions/backups/`
+- Format: `<session-id>-<threshold>-<timestamp>.jsonl[.gz]`
+- Retention: Configurable (default: 7 days)
 
 ## How It Works
 
@@ -121,13 +142,23 @@ When you add Tide Watch to your `HEARTBEAT.md`, I automatically:
    - Track which thresholds already warned this session
    - Don't repeat warnings if capacity stays at same level
 
-4. **Suggest actions**
+4. **Auto-backup (if enabled and triggered)**
+   - Check if capacity crossed any backup trigger thresholds
+   - Create backup: `~/.openclaw/agents/main/sessions/backups/<session-id>-<threshold>-<timestamp>.jsonl`
+   - Verify backup integrity
+   - Log backup completion
+   - Track which thresholds backed up (don't duplicate)
+
+5. **Suggest actions**
    - Save context to memory
    - Switch to lower-usage channel
    - Provide session reset commands
    - Generate context restoration prompts
 
-5. **Return to silent mode**
+6. **Cleanup old backups**
+   - Remove backups older than retention period (default: 7 days)
+
+7. **Return to silent mode**
    - If capacity is below all thresholds, return `HEARTBEAT_OK`
    - No output, no interruption
 

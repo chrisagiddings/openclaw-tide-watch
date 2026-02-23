@@ -73,6 +73,50 @@ Your agent will:
 3. Provide a context restoration prompt
 4. Reset the session
 
+## 💾 Automatic Backups
+
+Tide Watch automatically backs up your session when capacity crosses configured thresholds.
+
+### How Backups Work
+
+1. **Triggered by thresholds:** When capacity crosses a backup trigger (default: 90%, 95%)
+2. **One backup per threshold:** Won't duplicate backups at the same level
+3. **Stored safely:** `~/.openclaw/agents/main/sessions/backups/`
+4. **Named clearly:** `<session-id>-<threshold>-<timestamp>.jsonl`
+5. **Auto-cleanup:** Old backups removed after retention period (default: 7 days)
+
+### Example Timeline
+
+```
+Session starts at 10%
+→ [75% reached] 🟡 Warning issued, no backup yet
+→ [85% reached] 🟠 Warning issued, no backup yet
+→ [90% reached] 🔴 Warning + backup created: 6eff94ac-90-20260223-170500.jsonl
+→ [95% reached] 🚨 Critical + backup created: 6eff94ac-95-20260223-171200.jsonl
+```
+
+### Restore from Backup
+
+If your session becomes corrupted or you need to revert:
+
+```
+Show me available backups for this session
+Restore session from 90% backup
+```
+
+Your agent will:
+1. List all available backups with timestamps and sizes
+2. Restore the selected backup
+3. Guide you through reloading the session
+
+### Why This Matters
+
+**Scenario:** Your session hits 97% and locks mid-task.
+
+**Without backups:** You lose all context, must manually recreate conversation state.
+
+**With backups:** Restore from 90% or 95% backup, losing only the last few messages instead of the entire conversation.
+
 ## ⚙️ Configuration
 
 Default settings work for most users. To customize, edit the Tide Watch section in your `AGENTS.md`:
@@ -99,15 +143,23 @@ Edit the Tide Watch section in your `AGENTS.md`:
 - **Relaxed:** 2 hours (minimal overhead)
 - **Manual:** Disable heartbeat, check only when asked
 
-**3. Auto-Backup Triggers** (future feature):
+**3. Auto-Backup Triggers**:
 ```markdown
 **Auto-backup:**
-- Enabled: true
+- Enabled: true  # Enable automatic session backups
 - Trigger at thresholds: [90, 95]  # Subset of warning thresholds
+- Retention: 7 days  # Auto-delete backups older than this
+- Compress: false  # Set true to save disk space
 ```
 - **Conservative:** `[75, 85, 90, 95]` (backup at every warning)
 - **Moderate:** `[90, 95]` (default, key thresholds)
 - **Aggressive:** `[95]` (last-chance only)
+- **Disabled:** `Enabled: false`
+
+**Backup locations:**
+- Path: `~/.openclaw/agents/main/sessions/backups/`
+- Format: `<session-id>-<threshold>-<timestamp>.jsonl`
+- Example: `6eff94ac-90-20260223-170500.jsonl`
 
 ### Channel-Specific Settings
 
@@ -169,21 +221,24 @@ Check context usage
 ## 🌟 Features
 
 ### Current
-- ✅ Hourly capacity monitoring
-- ✅ Four-tier warning system (75/85/90/95%)
+- ✅ Hourly capacity monitoring (configurable frequency)
+- ✅ Four-tier warning system (customizable thresholds)
+- ✅ **Automatic session backups** at configured thresholds
+- ✅ **Backup restoration** from any saved checkpoint
+- ✅ **Retention management** (auto-cleanup old backups)
 - ✅ Memory save suggestions
 - ✅ Session reset assistance
 - ✅ Context restoration prompts
 - ✅ Model/provider agnostic
+- ✅ Heartbeat integration
 
 ### Planned
 - [ ] CLI tool for capacity reports
-- [ ] Automatic session backups at thresholds
 - [ ] Historical capacity tracking
 - [ ] Cross-session capacity dashboard
-- [ ] Heartbeat integration
 - [ ] Email/Discord notifications
 - [ ] Smart session rotation
+- [ ] Compression for backups (space-saving)
 
 ## 📊 Who Benefits
 
