@@ -72,31 +72,49 @@ Your agent will:
 
 Default settings work for most users. To customize, edit the Tide Watch section in your `AGENTS.md`:
 
-### Adjust Thresholds
+### Customize Configuration
 
-Change warning percentages:
+Edit the Tide Watch section in your `AGENTS.md`:
+
+**1. Warning Thresholds** (when to warn):
 ```markdown
 **Warning thresholds:**
-- **60%**: Early warning
-- **80%**: Action recommended
-- **95%**: Critical
+- **60%**: 🟡 Early warning
+- **80%**: 🟠 Action recommended
+- **95%**: 🚨 Critical
 ```
 
-### Change Check Frequency
-
-Adjust monitoring interval:
+**2. Check Frequency** (how often to monitor):
 ```markdown
 **Monitoring schedule:**
-- Check `session_status` approximately **every 30 minutes**
+- Check frequency: Every 30 minutes  # 15min, 30min, 1hr, 2hr, or 'manual'
 ```
+- **Aggressive:** 15 minutes (tight feedback loop)
+- **Moderate:** 1 hour (default, balanced)
+- **Relaxed:** 2 hours (minimal overhead)
+- **Manual:** Disable heartbeat, check only when asked
+
+**3. Auto-Backup Triggers** (future feature):
+```markdown
+**Auto-backup:**
+- Enabled: true
+- Trigger at thresholds: [90, 95]  # Subset of warning thresholds
+```
+- **Conservative:** `[75, 85, 90, 95]` (backup at every warning)
+- **Moderate:** `[90, 95]` (default, key thresholds)
+- **Aggressive:** `[95]` (last-chance only)
 
 ### Channel-Specific Settings
 
-Override thresholds per channel:
+Override settings per channel (advanced):
 ```markdown
-**Discord channels:** 75%, 85%, 90%, 95%
-**Webchat:** 85%, 95% (lighter)
-**DM:** 90%, 95% (minimal)
+**Discord channels:**
+- Thresholds: 75%, 85%, 90%, 95%
+- Frequency: Every 1 hour
+
+**Webchat:**
+- Thresholds: 85%, 95% (lighter warnings)
+- Frequency: Every 2 hours
 ```
 
 ## 🎭 Real-World Example
