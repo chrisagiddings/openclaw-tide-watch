@@ -70,20 +70,92 @@ To disable automatic backups entirely, set:
 
 **Manual trigger (fallback):**
 
-User can explicitly request restoration at any time:
-- Triggers: "load my restoration prompt", "restore from prompt", "apply restoration prompt"
-- Check for prompt file
-- Check enabled/disabled state
-- If disabled, ask: "This prompt is disabled. Load it anyway (one-time)?"
-- Read and apply context
-- Confirm what was restored
+User can explicitly request restoration at any time (not just on reset):
 
-**Feature discovery:**
+**Recognize these triggers:**
+- "load my restoration prompt"
+- "restore from restoration prompt"
+- "apply my restoration prompt"
+- "use my restoration prompt"  
+- "load session restoration prompt"
 
-If session reset detected AND no restoration prompt exists:
-- Briefly mention: "💡 Tip: You can create a restoration prompt to help me remember project context after resets. Interested?"
-- If user agrees: Guide them through creation
-- If user declines: Don't ask again this session
-- Be helpful but not pushy (one mention per session)
+**Process:**
+1. Check for prompt file: `restore-prompts/<session-id>.md`
+2. Check enabled/disabled state
+3. If prompt exists and enabled:
+   - Read the file
+   - Apply the context
+   - Respond: "✅ Restoration prompt loaded for [project/channel]. Context restored: [key points]. Ready to continue. What would you like to work on?"
+
+4. If prompt exists but disabled:
+   - Ask: "Restoration prompt is currently disabled for this session. Would you like me to load it anyway (one-time)?"
+   - If user confirms: Load despite disabled state
+   - If user declines: Skip loading
+
+5. If prompt doesn't exist:
+   - Respond: "No restoration prompt found for this session. Would you like to create one? I can help you set up a restoration prompt. Run: tide-watch restore-prompt edit --session <session-id>"
+
+**Manual loading works:**
+- At any time (not just session start)
+- Mid-session (refresh context)
+- Even when auto-load is disabled
+- Can override disabled state (with confirmation)
+
+**Feature discovery and guided creation:**
+
+**When to offer creation:**
+- ✅ Right after session reset (first few messages) AND no prompt exists
+- ✅ User manually re-explains project context (signals need for persistence)
+- ✅ During capacity warnings (90%+) to prepare for potential reset
+- ❌ User just declined (same session)
+- ❌ Session is < 10 messages old (too early to know if needed)
+- ❌ More than once per session (avoid nagging)
+
+**Discovery message (brief, non-intrusive):**
+"💡 Tip: You can create a restoration prompt to help me remember project context after resets. Interested?"
+
+**If user agrees, guide step-by-step:**
+
+1. "Great! Let's create a restoration prompt. I'll ask a few quick questions. You can skip any by saying 'skip'."
+
+2. Ask:
+   - "What project or topic is this session for? (e.g., 'Yatta! development')"
+   - "Where are the important files? (e.g., '~/clawd/projects/yatta/')"
+   - "What's your current focus? (e.g., 'Email features')"
+   - "Any important workflow rules? (e.g., 'Always use Lovable prompts')"
+   - "Any constraints or things NOT to do? (e.g., 'Never edit code directly')"
+
+3. Generate prompt content from answers:
+   - Pre-fill template with user's responses
+   - Include current conversation context (project mentions, paths)
+   - Add session metadata (channel, label)
+
+4. Save and confirm:
+   "✅ Restoration prompt created! Saved to: restore-prompts/<session-id>.md
+   
+   Next time this session resets, I'll automatically load this context.
+   
+   You can edit anytime: tide-watch restore-prompt edit --session <id>"
+
+**If user declines:**
+- Don't ask again this session
+- Don't make them feel bad
+- Mention it again on next reset (but not this session)
+
+**Pre-fill from context:**
+If user agrees to create prompt, extract from current conversation:
+- Project name (from user messages)
+- File paths mentioned
+- Workflow details discussed
+- Any explicit constraints given
+
+This makes creation easier - user just confirms/edits rather than writing from scratch.
+
+**During capacity warnings (optional reminder):**
+
+At 90%+ capacity, include brief reminder:
+"💡 Create a restoration prompt for quick recovery after reset: tide-watch restore-prompt edit --session <id>"
+
+Don't make it the focus - just a helpful aside in the warning message.
 
 **Skill**: [Tide Watch](https://github.com/chrisagiddings/openclaw-tide-watch) 🌊
