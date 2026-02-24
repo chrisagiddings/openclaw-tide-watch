@@ -12,6 +12,7 @@ const {
   sortByCapacity,
   formatTable,
   formatJSON,
+  formatDashboard,
   DEFAULT_SESSION_DIR
 } = require('../lib/capacity');
 
@@ -21,6 +22,7 @@ Tide Watch 🌊 - OpenClaw Session Capacity Monitor
 USAGE:
   tide-watch check [--session <key>]     Check current or specific session
   tide-watch report [--all]               List all sessions (or above threshold)
+  tide-watch dashboard                    Visual dashboard with recommendations
   tide-watch status                       Quick status summary
   tide-watch help                         Show this help
 
@@ -30,6 +32,7 @@ OPTIONS:
   --threshold <num>    Filter sessions above this percentage (default: 75)
   --json               Output as JSON instead of table
   --pretty             Pretty-print JSON (requires --json)
+  --watch              Live updates (dashboard only, refreshes every 10s)
   --session-dir <path> Custom session directory (default: ~/.openclaw/agents/main/sessions)
 
 EXAMPLES:
@@ -38,7 +41,8 @@ EXAMPLES:
   tide-watch report                       # Show sessions above 75%
   tide-watch report --all                 # Show all sessions
   tide-watch report --threshold 90        # Show sessions above 90%
-  tide-watch report --json --pretty       # JSON output
+  tide-watch dashboard                    # Visual dashboard view
+  tide-watch dashboard --watch            # Live updating dashboard
   tide-watch status                       # Quick status summary
 
 `.trim();
@@ -56,6 +60,7 @@ function parseArgs() {
     threshold: 75,
     json: false,
     pretty: false,
+    watch: false,
     sessionDir: DEFAULT_SESSION_DIR
   };
 
@@ -72,6 +77,8 @@ function parseArgs() {
       options.json = true;
     } else if (arg === '--pretty') {
       options.pretty = true;
+    } else if (arg === '--watch') {
+      options.watch = true;
     } else if (arg === '--session-dir' && i + 1 < args.length) {
       options.sessionDir = args[++i];
     }
@@ -192,6 +199,49 @@ function statusCommand(options) {
 }
 
 /**
+ * Dashboard command: Visual overview with recommendations
+ */
+function dashboardCommand(options) {
+  const showDashboard = () => {
+    const sessions = getAllSessions(options.sessionDir);
+    
+    if (sessions.length === 0) {
+      console.log('\nNo active sessions found.\n');
+      return;
+    }
+
+    if (options.json) {
+      // JSON output includes sessions + recommendations
+      const { getRecommendations } = require('../lib/capacity');
+      const data = {
+        sessions,
+        recommendations: getRecommendations(sessions),
+        timestamp: new Date().toISOString()
+      };
+      console.log(formatJSON(data, options.pretty));
+    } else {
+      // Clear screen for watch mode
+      if (options.watch) {
+        console.clear();
+        console.log(`Last updated: ${new Date().toLocaleString()}\n`);
+      }
+      
+      // Visual dashboard
+      console.log(formatDashboard(sessions));
+    }
+  };
+
+  // Show dashboard once
+  showDashboard();
+
+  // Watch mode: refresh every 10 seconds
+  if (options.watch && !options.json) {
+    console.log('🔄 Watch mode active (refreshes every 10s). Press Ctrl+C to exit.\n');
+    setInterval(showDashboard, 10000);
+  }
+}
+
+/**
  * Main entry point
  */
 function main() {
@@ -203,6 +253,9 @@ function main() {
       break;
     case 'report':
       reportCommand(options);
+      break;
+    case 'dashboard':
+      dashboardCommand(options);
       break;
     case 'status':
       statusCommand(options);
