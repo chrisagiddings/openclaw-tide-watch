@@ -29,6 +29,7 @@ USAGE:
   tide-watch report [--all]               List all sessions (or above threshold)
   tide-watch dashboard                    Visual dashboard with recommendations
   tide-watch archive --older-than <time>  Archive old sessions
+  tide-watch restore-prompt <action>      Manage session restoration prompts
   tide-watch status                       Quick status summary
   tide-watch help                         Show this help
 
@@ -58,7 +59,18 @@ EXAMPLES:
   tide-watch archive --older-than 4d --dry-run    # Preview archiving sessions older than 4 days
   tide-watch archive --older-than 2w              # Archive sessions older than 2 weeks
   tide-watch archive --older-than 1mo --exclude-channel discord  # Archive but keep Discord
+  tide-watch restore-prompt edit                  # Edit restoration prompt for current session
+  tide-watch restore-prompt show                  # Show current restoration prompt
+  tide-watch restore-prompt list                  # List all restoration prompts
   tide-watch status                       # Quick status summary
+
+RESTORE-PROMPT ACTIONS:
+  edit                   Open restoration prompt in editor
+  show                   Display current restoration prompt
+  info                   Show restoration prompt metadata
+  list                   List all restoration prompts
+  test                   Test restoration prompt (dry-run)
+  delete                 Delete restoration prompt
 
 `.trim();
 
@@ -400,6 +412,166 @@ function archiveCommand(options) {
 }
 
 /**
+ * Restore-prompt command: Manage session restoration prompts
+ */
+function restorePromptCommand(options) {
+  const {
+    hasRestorePrompt,
+    loadRestorePrompt,
+    deleteRestorePrompt,
+    listRestorePrompts,
+    editRestorePrompt,
+    getRestorePromptInfo,
+    formatRestorePromptInfo
+  } = require('../lib/restoration');
+
+  const action = process.argv[3]; // restore-prompt <action>
+  
+  if (!action) {
+    console.error('❌ Action required for restore-prompt command');
+    console.error('   Available actions: edit, show, info, list, test, delete');
+    console.error('   Example: tide-watch restore-prompt edit');
+    process.exit(1);
+  }
+
+  switch (action) {
+    case 'edit':
+      // Edit restoration prompt
+      if (!options.session) {
+        console.error('❌ --session <key> required for edit command');
+        console.error('   Example: tide-watch restore-prompt edit --session abc123');
+        process.exit(1);
+      }
+
+      console.log(`Opening editor for session ${options.session}...\n`);
+      const success = editRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (success) {
+        console.log(`\n✅ Restoration prompt saved for session ${options.session}`);
+        console.log(`   Location: ${options.sessionDir}/restore-prompts/${options.session}.md\n`);
+      }
+      break;
+
+    case 'show':
+      // Show restoration prompt
+      if (!options.session) {
+        console.error('❌ --session <key> required for show command');
+        console.error('   Example: tide-watch restore-prompt show --session abc123');
+        process.exit(1);
+      }
+
+      const prompt = loadRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (!prompt) {
+        console.log(`No restoration prompt found for session ${options.session}`);
+        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+      } else {
+        console.log(`\nRestoration Prompt for ${options.session}:\n`);
+        console.log('─'.repeat(70));
+        console.log(prompt);
+        console.log('─'.repeat(70));
+        console.log('');
+      }
+      break;
+
+    case 'info':
+      // Show restoration prompt metadata
+      if (!options.session) {
+        console.error('❌ --session <key> required for info command');
+        console.error('   Example: tide-watch restore-prompt info --session abc123');
+        process.exit(1);
+      }
+
+      const info = getRestorePromptInfo(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (!info) {
+        console.log(`No restoration prompt found for session ${options.session}\n`);
+      } else {
+        console.log(`\nRestoration Prompt Info:\n`);
+        console.log(formatRestorePromptInfo(info));
+        console.log('');
+      }
+      break;
+
+    case 'list':
+      // List all restoration prompts
+      const prompts = listRestorePrompts(options.sessionDir + '/restore-prompts');
+      
+      if (prompts.length === 0) {
+        console.log('No restoration prompts found.');
+        console.log('Create one with: tide-watch restore-prompt edit --session <session-id>\n');
+      } else {
+        console.log(`\nRestoration Prompts:\n`);
+        console.log('Session ID        Size      Modified');
+        console.log('─'.repeat(60));
+        
+        prompts.forEach(p => {
+          const id = p.sessionId.substring(0, 16).padEnd(17);
+          const size = `${p.size} bytes`.padEnd(9);
+          const modified = p.modified.toLocaleDateString();
+          console.log(`${id} ${size} ${modified}`);
+        });
+        
+        console.log('');
+        console.log(`Total: ${prompts.length} restoration prompt(s)\n`);
+      }
+      break;
+
+    case 'test':
+      // Test restoration prompt (dry-run)
+      if (!options.session) {
+        console.error('❌ --session <key> required for test command');
+        console.error('   Example: tide-watch restore-prompt test --session abc123');
+        process.exit(1);
+      }
+
+      const testPrompt = loadRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (!testPrompt) {
+        console.log(`No restoration prompt found for session ${options.session}\n`);
+      } else {
+        console.log(`\n🧪 Testing restoration prompt for ${options.session}:\n`);
+        console.log('─'.repeat(70));
+        console.log(testPrompt);
+        console.log('─'.repeat(70));
+        
+        const tokenEstimate = Math.ceil(testPrompt.length / 4);
+        console.log(`\nEstimated tokens: ~${tokenEstimate}`);
+        
+        if (tokenEstimate > 1000) {
+          console.log('⚠️  Warning: Prompt is large (>1000 tokens). Consider shortening.');
+        } else {
+          console.log('✅ Prompt size looks good.');
+        }
+        console.log('');
+      }
+      break;
+
+    case 'delete':
+      // Delete restoration prompt
+      if (!options.session) {
+        console.error('❌ --session <key> required for delete command');
+        console.error('   Example: tide-watch restore-prompt delete --session abc123');
+        process.exit(1);
+      }
+
+      const deleted = deleteRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (deleted) {
+        console.log(`✅ Deleted restoration prompt for session ${options.session}\n`);
+      } else {
+        console.log(`No restoration prompt found for session ${options.session}\n`);
+      }
+      break;
+
+    default:
+      console.error(`Unknown restore-prompt action: ${action}`);
+      console.error('Available actions: edit, show, info, list, test, delete');
+      process.exit(1);
+  }
+}
+
+/**
  * Main entry point
  */
 function main() {
@@ -417,6 +589,9 @@ function main() {
       break;
     case 'archive':
       archiveCommand(options);
+      break;
+    case 'restore-prompt':
+      restorePromptCommand(options);
       break;
     case 'status':
       statusCommand(options);
