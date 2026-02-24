@@ -1,0 +1,227 @@
+#!/usr/bin/env node
+
+/**
+ * Tide Watch CLI
+ * Manual capacity checks for OpenClaw sessions
+ */
+
+const {
+  getAllSessions,
+  getSession,
+  filterByThreshold,
+  sortByCapacity,
+  formatTable,
+  formatJSON,
+  DEFAULT_SESSION_DIR
+} = require('../lib/capacity');
+
+const USAGE = `
+Tide Watch 🌊 - OpenClaw Session Capacity Monitor
+
+USAGE:
+  tide-watch check [--session <key>]     Check current or specific session
+  tide-watch report [--all]               List all sessions (or above threshold)
+  tide-watch status                       Quick status summary
+  tide-watch help                         Show this help
+
+OPTIONS:
+  --session <key>      Target a specific session (default: current)
+  --all                Show all sessions regardless of capacity
+  --threshold <num>    Filter sessions above this percentage (default: 75)
+  --json               Output as JSON instead of table
+  --pretty             Pretty-print JSON (requires --json)
+  --session-dir <path> Custom session directory (default: ~/.openclaw/agents/main/sessions)
+
+EXAMPLES:
+  tide-watch check                        # Check current session
+  tide-watch check --session abc123       # Check specific session
+  tide-watch report                       # Show sessions above 75%
+  tide-watch report --all                 # Show all sessions
+  tide-watch report --threshold 90        # Show sessions above 90%
+  tide-watch report --json --pretty       # JSON output
+  tide-watch status                       # Quick status summary
+
+`.trim();
+
+/**
+ * Parse command line arguments
+ */
+function parseArgs() {
+  const args = process.argv.slice(2);
+  
+  const options = {
+    command: args[0] || 'help',
+    session: null,
+    all: false,
+    threshold: 75,
+    json: false,
+    pretty: false,
+    sessionDir: DEFAULT_SESSION_DIR
+  };
+
+  for (let i = 1; i < args.length; i++) {
+    const arg = args[i];
+    
+    if (arg === '--session' && i + 1 < args.length) {
+      options.session = args[++i];
+    } else if (arg === '--all') {
+      options.all = true;
+    } else if (arg === '--threshold' && i + 1 < args.length) {
+      options.threshold = parseInt(args[++i], 10);
+    } else if (arg === '--json') {
+      options.json = true;
+    } else if (arg === '--pretty') {
+      options.pretty = true;
+    } else if (arg === '--session-dir' && i + 1 < args.length) {
+      options.sessionDir = args[++i];
+    }
+  }
+
+  return options;
+}
+
+/**
+ * Check command: Show capacity for current or specific session
+ */
+function checkCommand(options) {
+  if (options.session) {
+    // Check specific session
+    const session = getSession(options.session, options.sessionDir);
+    
+    if (!session) {
+      console.error(`❌ Session not found: ${options.session}`);
+      process.exit(1);
+    }
+    
+    if (options.json) {
+      console.log(formatJSON([session], options.pretty));
+    } else {
+      console.log(`\nSession: ${session.sessionId}`);
+      console.log(`Channel: ${session.channel}`);
+      console.log(`Model:   ${session.model}`);
+      console.log(`Status:  ${session.status}`);
+      console.log(`\nCapacity: ${session.percentage}%`);
+      console.log(`Tokens:   ${session.tokensUsed.toLocaleString()} / ${session.tokensMax.toLocaleString()}`);
+      console.log(`Messages: ${session.messageCount}`);
+      console.log(`Last Activity: ${new Date(session.lastActivity).toLocaleString()}\n`);
+      
+      // Show recommendations
+      if (session.percentage >= 95) {
+        console.log('🚨 CRITICAL: Session will lock soon! Save to memory and reset immediately.');
+      } else if (session.percentage >= 90) {
+        console.log('🔴 HIGH: Recommend finishing current task and resetting session.');
+      } else if (session.percentage >= 85) {
+        console.log('🟠 ELEVATED: Consider wrapping up soon and switching to a fresh session.');
+      } else if (session.percentage >= 75) {
+        console.log('🟡 WARNING: Capacity approaching threshold. Plan to reset soon.');
+      } else {
+        console.log('✅ OK: Plenty of capacity remaining.');
+      }
+      console.log('');
+    }
+  } else {
+    // TODO: Detect current session from environment or session file
+    console.error('❌ --session <key> required for check command');
+    console.error('   (Auto-detection of current session not yet implemented)');
+    process.exit(1);
+  }
+}
+
+/**
+ * Report command: List all sessions with capacity info
+ */
+function reportCommand(options) {
+  let sessions = getAllSessions(options.sessionDir);
+  
+  if (sessions.length === 0) {
+    console.log('No sessions found.');
+    return;
+  }
+
+  // Filter by threshold unless --all is specified
+  if (!options.all) {
+    sessions = filterByThreshold(sessions, options.threshold);
+  }
+
+  // Sort by capacity (highest first)
+  sessions = sortByCapacity(sessions);
+
+  if (sessions.length === 0) {
+    console.log(`No sessions above ${options.threshold}% capacity.`);
+    return;
+  }
+
+  if (options.json) {
+    console.log(formatJSON(sessions, options.pretty));
+  } else {
+    console.log(`\nTide Watch Report 🌊\n`);
+    console.log(formatTable(sessions));
+    console.log(`\nTotal: ${sessions.length} session(s)${!options.all ? ` above ${options.threshold}%` : ''}\n`);
+  }
+}
+
+/**
+ * Status command: Quick summary
+ */
+function statusCommand(options) {
+  const sessions = getAllSessions(options.sessionDir);
+  
+  if (sessions.length === 0) {
+    console.log('No active sessions.');
+    return;
+  }
+
+  const total = sessions.length;
+  const critical = sessions.filter(s => s.percentage >= 95).length;
+  const high = sessions.filter(s => s.percentage >= 90 && s.percentage < 95).length;
+  const elevated = sessions.filter(s => s.percentage >= 85 && s.percentage < 90).length;
+  const warning = sessions.filter(s => s.percentage >= 75 && s.percentage < 85).length;
+  const ok = sessions.filter(s => s.percentage < 75).length;
+
+  console.log(`\nTide Watch Status 🌊\n`);
+  console.log(`Total Sessions: ${total}`);
+  console.log(`  🚨 Critical (≥95%):  ${critical}`);
+  console.log(`  🔴 High (90-94%):    ${high}`);
+  console.log(`  🟠 Elevated (85-89%): ${elevated}`);
+  console.log(`  🟡 Warning (75-84%):  ${warning}`);
+  console.log(`  ✅ OK (<75%):         ${ok}\n`);
+
+  if (critical > 0 || high > 0) {
+    console.log('⚠️  Action needed: Run "tide-watch report" for details\n');
+  }
+}
+
+/**
+ * Main entry point
+ */
+function main() {
+  const options = parseArgs();
+
+  switch (options.command) {
+    case 'check':
+      checkCommand(options);
+      break;
+    case 'report':
+      reportCommand(options);
+      break;
+    case 'status':
+      statusCommand(options);
+      break;
+    case 'help':
+    case '--help':
+    case '-h':
+      console.log(USAGE);
+      break;
+    default:
+      console.error(`Unknown command: ${options.command}`);
+      console.log(USAGE);
+      process.exit(1);
+  }
+}
+
+// Run if executed directly
+if (require.main === module) {
+  main();
+}
+
+module.exports = { main, parseArgs };
