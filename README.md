@@ -60,6 +60,47 @@ What's my current session capacity?
 Check context usage
 ```
 
+### CLI Tool
+
+Tide Watch includes a command-line tool for checking session capacity directly:
+
+**Quick Status:**
+```bash
+tide-watch status
+```
+
+**Check Specific Session:**
+```bash
+tide-watch check --session <session-id>
+```
+
+**List All Sessions:**
+```bash
+tide-watch report --all              # All sessions
+tide-watch report                     # Above 75% (default threshold)
+tide-watch report --threshold 90      # Above 90%
+tide-watch report --json --pretty     # JSON output
+```
+
+**Example Output:**
+```
+Tide Watch Report 🌊
+
+Session   Channel       Cap %              Tokens  Status
+---------------------------------------------------------
+2b1bf1ef  discord       87.9%       175,755/200,000  🟠 ELEVATED    
+a595325f  webchat       81.4%       162,702/200,000  🟡 WARNING     
+6eff94ac  telegram      80.1%       160,230/200,000  🟡 WARNING     
+
+Total: 3 session(s) above 75%
+```
+
+**Installation:**
+```bash
+cd ~/clawd/skills/tide-watch  # or wherever you cloned it
+npm link                       # Creates global tide-watch command
+```
+
 ### Reset with Context Preservation
 
 When warned about high capacity:
@@ -236,6 +277,7 @@ Check context usage
 ### Current
 - ✅ Hourly capacity monitoring (configurable frequency)
 - ✅ Four-tier warning system (customizable thresholds)
+- ✅ **CLI tool** for manual capacity checks (`tide-watch` command)
 - ✅ **Automatic session backups** at configured thresholds
 - ✅ **Backup restoration** from any saved checkpoint
 - ✅ **Retention management** (auto-cleanup old backups)
@@ -246,7 +288,6 @@ Check context usage
 - ✅ Heartbeat integration
 
 ### Planned
-- [ ] CLI tool for capacity reports
 - [ ] Historical capacity tracking
 - [ ] Cross-session capacity dashboard
 - [ ] Email/Discord notifications
