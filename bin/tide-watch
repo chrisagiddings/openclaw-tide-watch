@@ -9,6 +9,7 @@ const {
   getAllSessions,
   getSession,
   filterByThreshold,
+  filterByActivityAge,
   sortByCapacity,
   formatTable,
   formatJSON,
@@ -30,6 +31,7 @@ OPTIONS:
   --session <key>      Target a specific session (default: current)
   --all                Show all sessions regardless of capacity
   --threshold <num>    Filter sessions above this percentage (default: 75)
+  --active <hours>     Only show sessions active within N hours (e.g., --active 24)
   --json               Output as JSON instead of table
   --pretty             Pretty-print JSON (requires --json)
   --watch              Live updates (dashboard only, refreshes every 10s)
@@ -42,6 +44,7 @@ EXAMPLES:
   tide-watch report --all                 # Show all sessions
   tide-watch report --threshold 90        # Show sessions above 90%
   tide-watch dashboard                    # Visual dashboard view
+  tide-watch dashboard --active 48        # Only sessions active in last 48 hours
   tide-watch dashboard --watch            # Live updating dashboard
   tide-watch status                       # Quick status summary
 
@@ -58,6 +61,7 @@ function parseArgs() {
     session: null,
     all: false,
     threshold: 75,
+    activeHours: null,
     json: false,
     pretty: false,
     watch: false,
@@ -73,6 +77,8 @@ function parseArgs() {
       options.all = true;
     } else if (arg === '--threshold' && i + 1 < args.length) {
       options.threshold = parseInt(args[++i], 10);
+    } else if (arg === '--active' && i + 1 < args.length) {
+      options.activeHours = parseInt(args[++i], 10);
     } else if (arg === '--json') {
       options.json = true;
     } else if (arg === '--pretty') {
@@ -148,6 +154,11 @@ function reportCommand(options) {
     return;
   }
 
+  // Filter by activity age if specified
+  if (options.activeHours) {
+    sessions = filterByActivityAge(sessions, options.activeHours);
+  }
+
   // Filter by threshold unless --all is specified
   if (!options.all) {
     sessions = filterByThreshold(sessions, options.threshold);
@@ -157,7 +168,10 @@ function reportCommand(options) {
   sessions = sortByCapacity(sessions);
 
   if (sessions.length === 0) {
-    console.log(`No sessions above ${options.threshold}% capacity.`);
+    const filters = [];
+    if (options.activeHours) filters.push(`active in last ${options.activeHours}h`);
+    if (!options.all) filters.push(`above ${options.threshold}%`);
+    console.log(`No sessions ${filters.join(' and ')}.`);
     return;
   }
 
@@ -166,7 +180,8 @@ function reportCommand(options) {
   } else {
     console.log(`\nTide Watch Report 🌊\n`);
     console.log(formatTable(sessions));
-    console.log(`\nTotal: ${sessions.length} session(s)${!options.all ? ` above ${options.threshold}%` : ''}\n`);
+    const filterDesc = options.activeHours ? ` (active in last ${options.activeHours}h)` : '';
+    console.log(`\nTotal: ${sessions.length} session(s)${!options.all ? ` above ${options.threshold}%` : ''}${filterDesc}\n`);
   }
 }
 
@@ -206,11 +221,21 @@ function statusCommand(options) {
  */
 function dashboardCommand(options) {
   const showDashboard = () => {
-    const sessions = getAllSessions(options.sessionDir);
+    let sessions = getAllSessions(options.sessionDir);
     
     if (sessions.length === 0) {
       console.log('\nNo active sessions found.\n');
       return;
+    }
+
+    // Filter by activity age if specified
+    if (options.activeHours) {
+      const beforeFilter = sessions.length;
+      sessions = filterByActivityAge(sessions, options.activeHours);
+      if (sessions.length === 0) {
+        console.log(`\nNo sessions active in the last ${options.activeHours} hours (${beforeFilter} total).\n`);
+        return;
+      }
     }
 
     if (options.json) {
@@ -219,7 +244,10 @@ function dashboardCommand(options) {
       const data = {
         sessions,
         recommendations: getRecommendations(sessions),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        filters: {
+          activeHours: options.activeHours || null
+        }
       };
       console.log(formatJSON(data, options.pretty));
     } else {
@@ -231,6 +259,11 @@ function dashboardCommand(options) {
       
       // Visual dashboard
       console.log(formatDashboard(sessions));
+      
+      // Show filter info if active
+      if (options.activeHours) {
+        console.log(`Showing sessions active in last ${options.activeHours} hours\n`);
+      }
     }
   };
 
