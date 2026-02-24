@@ -105,6 +105,9 @@ function checkCommand(options) {
     } else {
       console.log(`\nSession: ${session.sessionId}`);
       console.log(`Channel: ${session.channel}`);
+      if (session.label) {
+        console.log(`Label:   ${session.label}`);
+      }
       console.log(`Model:   ${session.model}`);
       console.log(`Status:  ${session.status}`);
       console.log(`\nCapacity: ${session.percentage}%`);
