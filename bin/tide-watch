@@ -10,10 +10,14 @@ const {
   getSession,
   filterByThreshold,
   filterByActivityAge,
+  getSessionsOlderThan,
   sortByCapacity,
   formatTable,
   formatJSON,
   formatDashboard,
+  formatRelativeTime,
+  parseTimeString,
+  archiveSessions,
   DEFAULT_SESSION_DIR
 } = require('../lib/capacity');
 
@@ -24,6 +28,7 @@ USAGE:
   tide-watch check [--session <key>]     Check current or specific session
   tide-watch report [--all]               List all sessions (or above threshold)
   tide-watch dashboard                    Visual dashboard with recommendations
+  tide-watch archive --older-than <time>  Archive old sessions
   tide-watch status                       Quick status summary
   tide-watch help                         Show this help
 
@@ -32,6 +37,10 @@ OPTIONS:
   --all                Show all sessions regardless of capacity
   --threshold <num>    Filter sessions above this percentage (default: 75)
   --active <hours>     Only show sessions active within N hours (e.g., --active 24)
+  --older-than <time>  Archive sessions older than time (e.g., 4d, 2w, 1mo)
+  --dry-run            Preview archive without making changes
+  --exclude-channel    Exclude specific channel from archiving
+  --min-capacity <num> Only archive sessions below this capacity (default: no limit)
   --json               Output as JSON instead of table
   --pretty             Pretty-print JSON (requires --json)
   --watch              Live updates (dashboard only, refreshes every 10s)
@@ -46,6 +55,9 @@ EXAMPLES:
   tide-watch dashboard                    # Visual dashboard view
   tide-watch dashboard --active 48        # Only sessions active in last 48 hours
   tide-watch dashboard --watch            # Live updating dashboard
+  tide-watch archive --older-than 4d --dry-run    # Preview archiving sessions older than 4 days
+  tide-watch archive --older-than 2w              # Archive sessions older than 2 weeks
+  tide-watch archive --older-than 1mo --exclude-channel discord  # Archive but keep Discord
   tide-watch status                       # Quick status summary
 
 `.trim();
@@ -62,6 +74,10 @@ function parseArgs() {
     all: false,
     threshold: 75,
     activeHours: null,
+    olderThan: null,
+    dryRun: false,
+    excludeChannel: null,
+    minCapacity: null,
     json: false,
     pretty: false,
     watch: false,
@@ -79,6 +95,14 @@ function parseArgs() {
       options.threshold = parseInt(args[++i], 10);
     } else if (arg === '--active' && i + 1 < args.length) {
       options.activeHours = parseInt(args[++i], 10);
+    } else if (arg === '--older-than' && i + 1 < args.length) {
+      options.olderThan = args[++i];
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--exclude-channel' && i + 1 < args.length) {
+      options.excludeChannel = args[++i];
+    } else if (arg === '--min-capacity' && i + 1 < args.length) {
+      options.minCapacity = parseInt(args[++i], 10);
     } else if (arg === '--json') {
       options.json = true;
     } else if (arg === '--pretty') {
@@ -278,6 +302,104 @@ function dashboardCommand(options) {
 }
 
 /**
+ * Archive command: Move old sessions to archive directory
+ */
+function archiveCommand(options) {
+  // Validate required options
+  if (!options.olderThan) {
+    console.error('❌ --older-than <time> is required for archive command');
+    console.error('   Example: tide-watch archive --older-than 4d');
+    process.exit(1);
+  }
+
+  // Parse time string
+  let hours;
+  try {
+    hours = parseTimeString(options.olderThan);
+  } catch (error) {
+    console.error(`❌ ${error.message}`);
+    process.exit(1);
+  }
+
+  // Get all sessions
+  let sessions = getAllSessions(options.sessionDir);
+  
+  if (sessions.length === 0) {
+    console.log('No sessions found.');
+    return;
+  }
+
+  // Filter to sessions older than threshold
+  sessions = getSessionsOlderThan(sessions, hours);
+  
+  if (sessions.length === 0) {
+    console.log(`No sessions older than ${options.olderThan}.`);
+    return;
+  }
+
+  // Apply exclusion filters
+  if (options.excludeChannel) {
+    sessions = sessions.filter(s => s.channel !== options.excludeChannel);
+  }
+
+  if (options.minCapacity !== null) {
+    sessions = sessions.filter(s => s.percentage < options.minCapacity);
+  }
+
+  if (sessions.length === 0) {
+    console.log(`No sessions match archive criteria.`);
+    return;
+  }
+
+  // Show what will be/was archived
+  if (options.dryRun) {
+    console.log(`\n${options.dryRun ? 'Would archive' : 'Archiving'} ${sessions.length} session(s) older than ${options.olderThan}:\n`);
+  } else {
+    console.log(`\nArchiving ${sessions.length} session(s) older than ${options.olderThan}...\n`);
+  }
+
+  // Display table of sessions to archive
+  console.log('Session ID  Channel/Label     Last Active  Capacity  Tokens');
+  console.log('─'.repeat(65));
+  
+  sessions.forEach(session => {
+    const id = session.sessionId.substring(0, 10).padEnd(11);
+    const channelLabel = `${session.channel}${session.label ? '/' + session.label : ''}`.substring(0, 16).padEnd(17);
+    const lastActive = formatRelativeTime(session.lastActivity).padEnd(11);
+    const capacity = `${session.percentage.toFixed(1)}%`.padEnd(9);
+    const tokens = session.tokensUsed.toLocaleString();
+    
+    console.log(`${id} ${channelLabel} ${lastActive} ${capacity} ${tokens}`);
+  });
+  
+  console.log('─'.repeat(65));
+  console.log('');
+
+  if (options.dryRun) {
+    console.log('🔍 Dry run mode - no files were modified');
+    console.log('   Run without --dry-run to archive\n');
+    return;
+  }
+
+  // Perform archive
+  const results = archiveSessions(sessions, options.sessionDir, options.dryRun);
+
+  // Show results
+  if (results.archived.length > 0) {
+    console.log(`✅ Archived ${results.archived.length} session(s)`);
+    console.log(`   Location: ${options.sessionDir}/archive/${new Date().toISOString().split('T')[0]}/\n`);
+  }
+
+  if (results.failed.length > 0) {
+    console.log(`❌ Failed to archive ${results.failed.length} session(s):`);
+    results.failed.forEach(f => {
+      console.log(`   ${f.sessionId}: ${f.reason}`);
+    });
+    console.log('');
+  }
+}
+
+/**
  * Main entry point
  */
 function main() {
@@ -292,6 +414,9 @@ function main() {
       break;
     case 'dashboard':
       dashboardCommand(options);
+      break;
+    case 'archive':
+      archiveCommand(options);
       break;
     case 'status':
       statusCommand(options);
