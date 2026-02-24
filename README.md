@@ -82,17 +82,29 @@ tide-watch report --threshold 90      # Above 90%
 tide-watch report --json --pretty     # JSON output
 ```
 
-**Example Output:**
+**Visual Dashboard:**
+```bash
+tide-watch dashboard              # Visual overview with recommendations
+tide-watch dashboard --watch      # Live updates (refreshes every 10s)
+tide-watch dashboard --json       # JSON output
 ```
-Tide Watch Report 🌊
 
-Session   Channel       Cap %              Tokens  Status
----------------------------------------------------------
-2b1bf1ef  discord       87.9%       175,755/200,000  🟠 ELEVATED    
-a595325f  webchat       81.4%       162,702/200,000  🟡 WARNING     
-6eff94ac  telegram      80.1%       160,230/200,000  🟡 WARNING     
+**Example Dashboard:**
+```
+TIDE WATCH DASHBOARD 🌊
+──────────────────────────────────────────────────────────────────────
+Session ID  Channel       Capacity                    Tokens        Status
+──────────────────────────────────────────────────────────────────────
+2b1bf1ef-5  discord       🟠 █████████░  87.9%  175,755/200,000
+a595325f-e  webchat       🟡 ████████░░  81.4%  162,702/200,000
+6eff94ac-d  telegram      🟡 ████████░░  80.1%  160,230/200,000
+6dd10708-7  slack         🟡 ████████░░  79.1%  158,104/200,000
+──────────────────────────────────────────────────────────────────────
+⚠️  1 elevated, 3 warning
 
-Total: 3 session(s) above 75%
+RECOMMENDED ACTIONS:
+  🟠 Consider wrapping up discord/2b1bf1ef (87.9%)
+  💡 Switch active work to telegram/6dd0ea29 (32.1%)
 ```
 
 **Installation:**
@@ -278,6 +290,8 @@ Check context usage
 - ✅ Hourly capacity monitoring (configurable frequency)
 - ✅ Four-tier warning system (customizable thresholds)
 - ✅ **CLI tool** for manual capacity checks (`tide-watch` command)
+- ✅ **Cross-session dashboard** with visual capacity bars and recommendations
+- ✅ **Watch mode** for live dashboard updates
 - ✅ **Automatic session backups** at configured thresholds
 - ✅ **Backup restoration** from any saved checkpoint
 - ✅ **Retention management** (auto-cleanup old backups)
@@ -289,7 +303,6 @@ Check context usage
 
 ### Planned
 - [ ] Historical capacity tracking
-- [ ] Cross-session capacity dashboard
 - [ ] Email/Discord notifications
 - [ ] Smart session rotation
 - [ ] Compression for backups (space-saving)
