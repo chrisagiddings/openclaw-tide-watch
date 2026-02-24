@@ -71,6 +71,9 @@ RESTORE-PROMPT ACTIONS:
   list                   List all restoration prompts
   test                   Test restoration prompt (dry-run)
   delete                 Delete restoration prompt
+  enable                 Enable auto-loading for session
+  disable                Disable auto-loading for session
+  status                 Check enabled/disabled state
 
 `.trim();
 
@@ -422,7 +425,12 @@ function restorePromptCommand(options) {
     listRestorePrompts,
     editRestorePrompt,
     getRestorePromptInfo,
-    formatRestorePromptInfo
+    formatRestorePromptInfo,
+    isRestorePromptEnabled,
+    disableRestorePrompt,
+    enableRestorePrompt,
+    getRestorePromptStatus,
+    formatRestorePromptStatus
   } = require('../lib/restoration');
 
   const action = process.argv[3]; // restore-prompt <action>
@@ -501,19 +509,27 @@ function restorePromptCommand(options) {
         console.log('No restoration prompts found.');
         console.log('Create one with: tide-watch restore-prompt edit --session <session-id>\n');
       } else {
+        const disabledCount = prompts.filter(p => !p.enabled).length;
+        
         console.log(`\nRestoration Prompts:\n`);
-        console.log('Session ID        Size      Modified');
-        console.log('─'.repeat(60));
+        console.log('Session ID        Size       Modified    Status');
+        console.log('─'.repeat(70));
         
         prompts.forEach(p => {
           const id = p.sessionId.substring(0, 16).padEnd(17);
-          const size = `${p.size} bytes`.padEnd(9);
-          const modified = p.modified.toLocaleDateString();
-          console.log(`${id} ${size} ${modified}`);
+          const size = `${p.size} bytes`.padEnd(10);
+          const modified = p.modified.toLocaleDateString().padEnd(11);
+          const status = p.enabled ? '✅ Enabled' : '⏸️  Disabled';
+          console.log(`${id} ${size} ${modified} ${status}`);
         });
         
         console.log('');
-        console.log(`Total: ${prompts.length} restoration prompt(s)\n`);
+        
+        if (disabledCount > 0) {
+          console.log(`Total: ${prompts.length} restoration prompt(s) (${disabledCount} disabled)\n`);
+        } else {
+          console.log(`Total: ${prompts.length} restoration prompt(s)\n`);
+        }
       }
       break;
 
@@ -564,9 +580,70 @@ function restorePromptCommand(options) {
       }
       break;
 
+    case 'enable':
+      // Enable restoration prompt
+      if (!options.session) {
+        console.error('❌ --session <key> required for enable command');
+        console.error('   Example: tide-watch restore-prompt enable --session abc123');
+        process.exit(1);
+      }
+
+      const enabled = enableRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (enabled) {
+        console.log(`✅ Enabled restoration prompt for session ${options.session}`);
+        console.log(`   Auto-load will activate on session reset`);
+        console.log(`   Location: ${options.sessionDir}/restore-prompts/${options.session}.md\n`);
+      } else {
+        console.log(`No restoration prompt found for session ${options.session}`);
+        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+      }
+      break;
+
+    case 'disable':
+      // Disable restoration prompt
+      if (!options.session) {
+        console.error('❌ --session <key> required for disable command');
+        console.error('   Example: tide-watch restore-prompt disable --session abc123');
+        process.exit(1);
+      }
+
+      const disabled = disableRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (disabled) {
+        console.log(`✅ Disabled restoration prompt for session ${options.session}`);
+        console.log(`   Prompt file preserved: ${options.sessionDir}/restore-prompts/${options.session}.md`);
+        console.log(`   Auto-load will be skipped on session reset`);
+        console.log('');
+        console.log(`   To re-enable: tide-watch restore-prompt enable --session ${options.session}\n`);
+      } else {
+        console.log(`No restoration prompt found for session ${options.session}\n`);
+      }
+      break;
+
+    case 'status':
+      // Show restoration prompt status
+      if (!options.session) {
+        console.error('❌ --session <key> required for status command');
+        console.error('   Example: tide-watch restore-prompt status --session abc123');
+        process.exit(1);
+      }
+
+      const statusInfo = getRestorePromptStatus(options.session, options.sessionDir + '/restore-prompts');
+      
+      if (!statusInfo) {
+        console.log(`\nNo restoration prompt found for session ${options.session}`);
+        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+      } else {
+        console.log(`\nRestoration Prompt Status:\n`);
+        console.log(formatRestorePromptStatus(statusInfo));
+        console.log('');
+      }
+      break;
+
     default:
       console.error(`Unknown restore-prompt action: ${action}`);
-      console.error('Available actions: edit, show, info, list, test, delete');
+      console.error('Available actions: edit, show, info, list, test, delete, enable, disable, status');
       process.exit(1);
   }
 }

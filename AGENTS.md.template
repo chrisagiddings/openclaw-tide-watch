@@ -36,4 +36,54 @@ To disable automatic backups entirely, set:
 
 **Why this matters:** Proactive monitoring prevents lost work and frustration when sessions lock at capacity.
 
+---
+
+## 📋 SESSION RESTORATION PROMPTS
+
+**On session start or after reset:**
+
+1. **Check for restoration prompt:**
+   - Path: `~/.openclaw/agents/main/sessions/restore-prompts/<session-id>.md`
+   - Alternative: `~/.openclaw/agents/main/sessions/restore-prompts/default.md`
+
+2. **If restoration prompt exists:**
+   - Check if enabled (no `.disabled` marker file)
+   - Read the file contents
+   - Apply the context from the prompt
+   - Acknowledge restoration briefly: "✅ Session restored from restoration prompt. Ready to continue [project]!"
+
+3. **If no restoration prompt exists:**
+   - Continue with normal session start (no error message)
+   - Optionally suggest creating one (see feature discovery below)
+
+**How to detect session start/reset:**
+- First message of the session
+- Token usage is very low (< 5,000 tokens)
+- Session context is minimal/empty
+
+**Restoration prompt location:**
+`~/.openclaw/agents/main/sessions/restore-prompts/<session-id>.md`
+
+**Check if enabled:**
+- Enabled by default if prompt file exists
+- Disabled if `.disabled` marker file exists: `<session-id>.md.disabled`
+
+**Manual trigger (fallback):**
+
+User can explicitly request restoration at any time:
+- Triggers: "load my restoration prompt", "restore from prompt", "apply restoration prompt"
+- Check for prompt file
+- Check enabled/disabled state
+- If disabled, ask: "This prompt is disabled. Load it anyway (one-time)?"
+- Read and apply context
+- Confirm what was restored
+
+**Feature discovery:**
+
+If session reset detected AND no restoration prompt exists:
+- Briefly mention: "💡 Tip: You can create a restoration prompt to help me remember project context after resets. Interested?"
+- If user agrees: Guide them through creation
+- If user declines: Don't ask again this session
+- Be helpful but not pushy (one mention per session)
+
 **Skill**: [Tide Watch](https://github.com/chrisagiddings/openclaw-tide-watch) 🌊
