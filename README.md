@@ -107,6 +107,30 @@ RECOMMENDED ACTIONS:
   💡 Switch active work to telegram/6dd0ea29 (32.1%)
 ```
 
+**Archive Old Sessions:**
+```bash
+tide-watch archive --older-than 4d --dry-run    # Preview archiving
+tide-watch archive --older-than 2w              # Archive sessions older than 2 weeks
+tide-watch archive --older-than 1mo --exclude-channel discord  # Keep Discord sessions
+tide-watch archive --older-than 7d --min-capacity 50           # Only low-capacity sessions
+```
+
+**Example Archive Output:**
+```
+Archiving 4 session(s) older than 8d...
+
+Session ID  Channel/Label     Last Active  Capacity  Tokens
+─────────────────────────────────────────────────────────────────
+2b1bf1ef-5  unknown           1w ago      87.9%     175,755
+6dd0ea29-c  unknown           1w ago      32.1%     64,139
+6dd10708-7  unknown           1w ago      79.1%     158,104
+c8450d3b-3  unknown           1w ago      14.6%     29,225
+─────────────────────────────────────────────────────────────────
+
+✅ Archived 4 session(s)
+   Location: ~/.openclaw/agents/main/sessions/archive/2026-02-24/
+```
+
 **Installation:**
 ```bash
 cd ~/clawd/skills/tide-watch  # or wherever you cloned it
@@ -291,6 +315,9 @@ Check context usage
 - ✅ Four-tier warning system (customizable thresholds)
 - ✅ **CLI tool** for manual capacity checks (`tide-watch` command)
 - ✅ **Cross-session dashboard** with visual capacity bars and recommendations
+- ✅ **Relative timestamps** for last activity (e.g., "2h ago", "5d ago")
+- ✅ **Activity filtering** to hide old sessions (--active flag)
+- ✅ **Batch archive command** for cleaning up old sessions
 - ✅ **Watch mode** for live dashboard updates
 - ✅ **Automatic session backups** at configured thresholds
 - ✅ **Backup restoration** from any saved checkpoint
@@ -303,6 +330,7 @@ Check context usage
 
 ### Planned
 - [ ] Historical capacity tracking
+- [ ] Archive restore command (undo archives)
 - [ ] Email/Discord notifications
 - [ ] Smart session rotation
 - [ ] Compression for backups (space-saving)
