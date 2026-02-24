@@ -342,6 +342,29 @@ Check context usage
 - **Team deployments** (shared OpenClaw instances)
 - **Anyone** who's lost work to a full context window
 
+## 📚 Documentation
+
+**Getting Started:**
+- [Installation Guide](#-installation) (this README)
+- [Quick Start](#-quick-start) (this README)
+- [Configuration Guide](#️-configuration) (this README)
+
+**Reference:**
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions
+- **[Usage Examples](docs/USAGE-EXAMPLES.md)** - Real-world scenarios and workflows
+- [Parsing Documentation](PARSING.md) - Configuration parsing details
+
+**Development:**
+- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
+- [Code Examples](examples/) - Example scripts and demonstrations
+
+**Quick Help:**
+- 🔧 Having issues? → [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+- ❓ How do I...? → [FAQ](docs/FAQ.md)
+- 💡 Show me examples → [Usage Examples](docs/USAGE-EXAMPLES.md)
+- ⌨️  CLI reference → [CLI Tool](#cli-tool) (this README)
+
 ## 🤝 Contributing
 
 Issues and PRs welcome!
