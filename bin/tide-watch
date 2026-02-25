@@ -8,6 +8,7 @@
 const {
   getAllSessions,
   getSession,
+  resolveSessionId,
   filterByThreshold,
   filterByActivityAge,
   getSessionsOlderThan,
@@ -29,12 +30,13 @@ USAGE:
   tide-watch report [--all]               List all sessions (or above threshold)
   tide-watch dashboard                    Visual dashboard with recommendations
   tide-watch archive --older-than <time>  Archive old sessions
-  tide-watch restore-prompt <action>      Manage session restoration prompts
+  tide-watch resume-prompt <action>      Manage session resumption prompts
   tide-watch status                       Quick status summary
   tide-watch help                         Show this help
 
 OPTIONS:
-  --session <key>      Target a specific session (default: current)
+  --session <key>      Target a specific session (ID, label, channel, or combo)
+                       Examples: abc123, "#navi-code-yatta", discord, "discord/#channel"
   --all                Show all sessions regardless of capacity
   --threshold <num>    Filter sessions above this percentage (default: 75)
   --active <hours>     Only show sessions active within N hours (e.g., --active 24)
@@ -59,18 +61,18 @@ EXAMPLES:
   tide-watch archive --older-than 4d --dry-run    # Preview archiving sessions older than 4 days
   tide-watch archive --older-than 2w              # Archive sessions older than 2 weeks
   tide-watch archive --older-than 1mo --exclude-channel discord  # Archive but keep Discord
-  tide-watch restore-prompt edit                  # Edit restoration prompt for current session
-  tide-watch restore-prompt show                  # Show current restoration prompt
-  tide-watch restore-prompt list                  # List all restoration prompts
+  tide-watch resume-prompt edit                  # Edit resumption prompt for current session
+  tide-watch resume-prompt show                  # Show current resumption prompt
+  tide-watch resume-prompt list                  # List all resumption prompts
   tide-watch status                       # Quick status summary
 
 RESTORE-PROMPT ACTIONS:
-  edit                   Open restoration prompt in editor
-  show                   Display current restoration prompt
-  info                   Show restoration prompt metadata
-  list                   List all restoration prompts
-  test                   Test restoration prompt (dry-run)
-  delete                 Delete restoration prompt
+  edit                   Open resumption prompt in editor
+  show                   Display current resumption prompt
+  info                   Show resumption prompt metadata
+  list                   List all resumption prompts
+  test                   Test resumption prompt (dry-run)
+  delete                 Delete resumption prompt
   enable                 Enable auto-loading for session
   disable                Disable auto-loading for session
   status                 Check enabled/disabled state
@@ -140,11 +142,17 @@ function parseArgs() {
  */
 function checkCommand(options) {
   if (options.session) {
+    // Resolve session ID
+    const resolvedSessionId = resolveSessionInput(options.session, options.sessionDir);
+    if (!resolvedSessionId) {
+      process.exit(1);
+    }
+    
     // Check specific session
-    const session = getSession(options.session, options.sessionDir);
+    const session = getSession(resolvedSessionId, options.sessionDir);
     
     if (!session) {
-      console.error(`❌ Session not found: ${options.session}`);
+      console.error(`❌ Session not found: ${resolvedSessionId}`);
       process.exit(1);
     }
     
@@ -418,7 +426,62 @@ function archiveCommand(options) {
 }
 
 /**
- * Restore-prompt command: Manage session restoration prompts
+ * Helper: Resolve session ID from user input
+ * Handles UUIDs, labels, channels, and provides helpful error messages
+ * @param {string} input - User-provided session identifier
+ * @param {string} sessionDir - Session directory
+ * @returns {string|null} Resolved session ID or null if error
+ */
+function resolveSessionInput(input, sessionDir) {
+  const result = resolveSessionId(input, sessionDir);
+  
+  if (result.sessionId) {
+    // Successful resolution
+    return result.sessionId;
+  }
+  
+  if (result.ambiguous) {
+    // Multiple matches
+    console.error(`❌ ${result.error}\n`);
+    console.error('Matching sessions:');
+    result.matches.forEach((match, idx) => {
+      const label = match.label ? `/${match.label}` : '';
+      const id = match.sessionId.substring(0, 8);
+      console.error(`  ${idx + 1}. ${match.channel}${label} (${id})`);
+    });
+    console.error('\nPlease specify:');
+    result.matches.forEach(match => {
+      const label = match.label ? `/${match.label}` : '';
+      console.error(`  tide-watch resume-prompt <action> --session "${match.channel}${label}"`);
+      console.error(`  tide-watch resume-prompt <action> --session ${match.sessionId.substring(0, 8)}`);
+    });
+    console.error('');
+    return null;
+  }
+  
+  // No matches
+  console.error(`❌ ${result.error}`);
+  console.error('Available sessions:');
+  
+  const sessions = getAllSessions(sessionDir);
+  if (sessions.length === 0) {
+    console.error('  (No sessions found)');
+  } else {
+    sessions.slice(0, 10).forEach(s => {
+      const label = s.label ? `/${s.label}` : '';
+      const id = s.sessionId.substring(0, 8);
+      console.error(`  ${s.channel}${label} (${id})`);
+    });
+    if (sessions.length > 10) {
+      console.error(`  ... and ${sessions.length - 10} more`);
+    }
+  }
+  console.error('');
+  return null;
+}
+
+/**
+ * Restore-prompt command: Manage session resumption prompts
  */
 function restorePromptCommand(options) {
   const {
@@ -439,50 +502,65 @@ function restorePromptCommand(options) {
     enableDiscovery,
     getDiscoveryStatus,
     formatDiscoveryStatus
-  } = require('../lib/restoration');
+  } = require('../lib/resumption');
 
-  const action = process.argv[3]; // restore-prompt <action>
+  const action = process.argv[3]; // resume-prompt <action>
   
   if (!action) {
-    console.error('❌ Action required for restore-prompt command');
+    console.error('❌ Action required for resume-prompt command');
     console.error('   Available actions: edit, show, info, list, test, delete');
-    console.error('   Example: tide-watch restore-prompt edit');
+    console.error('   Example: tide-watch resume-prompt edit');
     process.exit(1);
   }
 
   switch (action) {
     case 'edit':
-      // Edit restoration prompt
+      // Edit resumption prompt
       if (!options.session) {
         console.error('❌ --session <key> required for edit command');
-        console.error('   Example: tide-watch restore-prompt edit --session abc123');
+        console.error('   Example: tide-watch resume-prompt edit --session abc123');
+        console.error('   Example: tide-watch resume-prompt edit --session "#navi-code-yatta"');
+        console.error('   Example: tide-watch resume-prompt edit --session discord');
         process.exit(1);
       }
 
-      console.log(`Opening editor for session ${options.session}...\n`);
-      const success = editRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const editSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!editSessionId) {
+        process.exit(1);
+      }
+
+      console.log(`Opening editor for session ${editSessionId}...\n`);
+      const success = editRestorePrompt(editSessionId, options.sessionDir + '/resume-prompts');
       
       if (success) {
-        console.log(`\n✅ Restoration prompt saved for session ${options.session}`);
-        console.log(`   Location: ${options.sessionDir}/restore-prompts/${options.session}.md\n`);
+        console.log(`\n✅ Resumption prompt saved for session ${editSessionId}`);
+        console.log(`   Location: ${options.sessionDir}/resume-prompts/${editSessionId}.md\n`);
       }
       break;
 
     case 'show':
-      // Show restoration prompt
+      // Show resumption prompt
       if (!options.session) {
         console.error('❌ --session <key> required for show command');
-        console.error('   Example: tide-watch restore-prompt show --session abc123');
+        console.error('   Example: tide-watch resume-prompt show --session abc123');
+        console.error('   Example: tide-watch resume-prompt show --session "#navi-code-yatta"');
         process.exit(1);
       }
 
-      const prompt = loadRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const showSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!showSessionId) {
+        process.exit(1);
+      }
+
+      const prompt = loadRestorePrompt(showSessionId, options.sessionDir + '/resume-prompts');
       
       if (!prompt) {
-        console.log(`No restoration prompt found for session ${options.session}`);
-        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${showSessionId}`);
+        console.log(`Create one with: tide-watch resume-prompt edit --session ${showSessionId}\n`);
       } else {
-        console.log(`\nRestoration Prompt for ${options.session}:\n`);
+        console.log(`\nResumption Prompt for ${showSessionId}:\n`);
         console.log('─'.repeat(70));
         console.log(prompt);
         console.log('─'.repeat(70));
@@ -491,35 +569,42 @@ function restorePromptCommand(options) {
       break;
 
     case 'info':
-      // Show restoration prompt metadata
+      // Show resumption prompt metadata
       if (!options.session) {
         console.error('❌ --session <key> required for info command');
-        console.error('   Example: tide-watch restore-prompt info --session abc123');
+        console.error('   Example: tide-watch resume-prompt info --session abc123');
+        console.error('   Example: tide-watch resume-prompt info --session discord');
         process.exit(1);
       }
 
-      const info = getRestorePromptInfo(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const infoSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!infoSessionId) {
+        process.exit(1);
+      }
+
+      const info = getRestorePromptInfo(infoSessionId, options.sessionDir + '/resume-prompts');
       
       if (!info) {
-        console.log(`No restoration prompt found for session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${infoSessionId}\n`);
       } else {
-        console.log(`\nRestoration Prompt Info:\n`);
+        console.log(`\nResumption Prompt Info:\n`);
         console.log(formatRestorePromptInfo(info));
         console.log('');
       }
       break;
 
     case 'list':
-      // List all restoration prompts
-      const prompts = listRestorePrompts(options.sessionDir + '/restore-prompts');
+      // List all resumption prompts
+      const prompts = listRestorePrompts(options.sessionDir + '/resume-prompts');
       
       if (prompts.length === 0) {
-        console.log('No restoration prompts found.');
-        console.log('Create one with: tide-watch restore-prompt edit --session <session-id>\n');
+        console.log('No resumption prompts found.');
+        console.log('Create one with: tide-watch resume-prompt edit --session <session-id>\n');
       } else {
         const disabledCount = prompts.filter(p => !p.enabled).length;
         
-        console.log(`\nRestoration Prompts:\n`);
+        console.log(`\nResumption Prompts:\n`);
         console.log('Session ID        Size       Modified    Status');
         console.log('─'.repeat(70));
         
@@ -534,27 +619,34 @@ function restorePromptCommand(options) {
         console.log('');
         
         if (disabledCount > 0) {
-          console.log(`Total: ${prompts.length} restoration prompt(s) (${disabledCount} disabled)\n`);
+          console.log(`Total: ${prompts.length} resumption prompt(s) (${disabledCount} disabled)\n`);
         } else {
-          console.log(`Total: ${prompts.length} restoration prompt(s)\n`);
+          console.log(`Total: ${prompts.length} resumption prompt(s)\n`);
         }
       }
       break;
 
     case 'test':
-      // Test restoration prompt (dry-run)
+      // Test resumption prompt (dry-run)
       if (!options.session) {
         console.error('❌ --session <key> required for test command');
-        console.error('   Example: tide-watch restore-prompt test --session abc123');
+        console.error('   Example: tide-watch resume-prompt test --session abc123');
+        console.error('   Example: tide-watch resume-prompt test --session webchat');
         process.exit(1);
       }
 
-      const testPrompt = loadRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const testSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!testSessionId) {
+        process.exit(1);
+      }
+
+      const testPrompt = loadRestorePrompt(testSessionId, options.sessionDir + '/resume-prompts');
       
       if (!testPrompt) {
-        console.log(`No restoration prompt found for session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${testSessionId}\n`);
       } else {
-        console.log(`\n🧪 Testing restoration prompt for ${options.session}:\n`);
+        console.log(`\n🧪 Testing resumption prompt for ${testSessionId}:\n`);
         console.log('─'.repeat(70));
         console.log(testPrompt);
         console.log('─'.repeat(70));
@@ -572,78 +664,106 @@ function restorePromptCommand(options) {
       break;
 
     case 'delete':
-      // Delete restoration prompt
+      // Delete resumption prompt
       if (!options.session) {
         console.error('❌ --session <key> required for delete command');
-        console.error('   Example: tide-watch restore-prompt delete --session abc123');
+        console.error('   Example: tide-watch resume-prompt delete --session abc123');
+        console.error('   Example: tide-watch resume-prompt delete --session telegram');
         process.exit(1);
       }
 
-      const deleted = deleteRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const deleteSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!deleteSessionId) {
+        process.exit(1);
+      }
+
+      const deleted = deleteRestorePrompt(deleteSessionId, options.sessionDir + '/resume-prompts');
       
       if (deleted) {
-        console.log(`✅ Deleted restoration prompt for session ${options.session}\n`);
+        console.log(`✅ Deleted resumption prompt for session ${deleteSessionId}\n`);
       } else {
-        console.log(`No restoration prompt found for session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${deleteSessionId}\n`);
       }
       break;
 
     case 'enable':
-      // Enable restoration prompt
+      // Enable resumption prompt
       if (!options.session) {
         console.error('❌ --session <key> required for enable command');
-        console.error('   Example: tide-watch restore-prompt enable --session abc123');
+        console.error('   Example: tide-watch resume-prompt enable --session abc123');
+        console.error('   Example: tide-watch resume-prompt enable --session slack');
         process.exit(1);
       }
 
-      const enabled = enableRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const enableSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!enableSessionId) {
+        process.exit(1);
+      }
+
+      const enabled = enableRestorePrompt(enableSessionId, options.sessionDir + '/resume-prompts');
       
       if (enabled) {
-        console.log(`✅ Enabled restoration prompt for session ${options.session}`);
+        console.log(`✅ Enabled resumption prompt for session ${enableSessionId}`);
         console.log(`   Auto-load will activate on session reset`);
-        console.log(`   Location: ${options.sessionDir}/restore-prompts/${options.session}.md\n`);
+        console.log(`   Location: ${options.sessionDir}/resume-prompts/${enableSessionId}.md\n`);
       } else {
-        console.log(`No restoration prompt found for session ${options.session}`);
-        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${enableSessionId}`);
+        console.log(`Create one with: tide-watch resume-prompt edit --session ${enableSessionId}\n`);
       }
       break;
 
     case 'disable':
-      // Disable restoration prompt
+      // Disable resumption prompt
       if (!options.session) {
         console.error('❌ --session <key> required for disable command');
-        console.error('   Example: tide-watch restore-prompt disable --session abc123');
+        console.error('   Example: tide-watch resume-prompt disable --session abc123');
+        console.error('   Example: tide-watch resume-prompt disable --session "#navi-code-yatta"');
         process.exit(1);
       }
 
-      const disabled = disableRestorePrompt(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const disableSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!disableSessionId) {
+        process.exit(1);
+      }
+
+      const disabled = disableRestorePrompt(disableSessionId, options.sessionDir + '/resume-prompts');
       
       if (disabled) {
-        console.log(`✅ Disabled restoration prompt for session ${options.session}`);
-        console.log(`   Prompt file preserved: ${options.sessionDir}/restore-prompts/${options.session}.md`);
+        console.log(`✅ Disabled resumption prompt for session ${disableSessionId}`);
+        console.log(`   Prompt file preserved: ${options.sessionDir}/resume-prompts/${disableSessionId}.md`);
         console.log(`   Auto-load will be skipped on session reset`);
         console.log('');
-        console.log(`   To re-enable: tide-watch restore-prompt enable --session ${options.session}\n`);
+        console.log(`   To re-enable: tide-watch resume-prompt enable --session ${disableSessionId}\n`);
       } else {
-        console.log(`No restoration prompt found for session ${options.session}\n`);
+        console.log(`No resumption prompt found for session ${disableSessionId}\n`);
       }
       break;
 
     case 'status':
-      // Show restoration prompt status
+      // Show resumption prompt status
       if (!options.session) {
         console.error('❌ --session <key> required for status command');
-        console.error('   Example: tide-watch restore-prompt status --session abc123');
+        console.error('   Example: tide-watch resume-prompt status --session abc123');
+        console.error('   Example: tide-watch resume-prompt status --session discord');
         process.exit(1);
       }
 
-      const statusInfo = getRestorePromptStatus(options.session, options.sessionDir + '/restore-prompts');
+      // Resolve session ID
+      const statusSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!statusSessionId) {
+        process.exit(1);
+      }
+
+      const statusInfo = getRestorePromptStatus(statusSessionId, options.sessionDir + '/resume-prompts');
       
       if (!statusInfo) {
-        console.log(`\nNo restoration prompt found for session ${options.session}`);
-        console.log(`Create one with: tide-watch restore-prompt edit --session ${options.session}\n`);
+        console.log(`\nNo resumption prompt found for session ${statusSessionId}`);
+        console.log(`Create one with: tide-watch resume-prompt edit --session ${statusSessionId}\n`);
       } else {
-        console.log(`\nRestoration Prompt Status:\n`);
+        console.log(`\nResumption Prompt Status:\n`);
         console.log(formatRestorePromptStatus(statusInfo));
         console.log('');
       }
@@ -651,34 +771,34 @@ function restorePromptCommand(options) {
 
     case 'discovery-off':
       // Disable feature discovery
-      disableDiscovery(options.sessionDir + '/restore-prompts');
+      disableDiscovery(options.sessionDir + '/resume-prompts');
       console.log(`✅ Feature discovery disabled globally`);
-      console.log(`   Agents will no longer offer to create restoration prompts`);
+      console.log(`   Agents will no longer offer to create resumption prompts`);
       console.log('');
       console.log(`   Auto-loading and manual triggers still work`);
       console.log(`   Existing prompts continue to function normally`);
       console.log('');
-      console.log(`   To re-enable: tide-watch restore-prompt discovery-on\n`);
+      console.log(`   To re-enable: tide-watch resume-prompt discovery-on\n`);
       break;
 
     case 'discovery-on':
       // Enable feature discovery
-      enableDiscovery(options.sessionDir + '/restore-prompts');
+      enableDiscovery(options.sessionDir + '/resume-prompts');
       console.log(`✅ Feature discovery enabled globally`);
-      console.log(`   Agents will offer to create restoration prompts after resets`);
-      console.log(`   Capacity warnings will include restoration prompt reminders\n`);
+      console.log(`   Agents will offer to create resumption prompts after resets`);
+      console.log(`   Capacity warnings will include resumption prompt reminders\n`);
       break;
 
     case 'discovery-status':
       // Show discovery status
-      const discoveryStatus = getDiscoveryStatus(options.sessionDir + '/restore-prompts');
+      const discoveryStatus = getDiscoveryStatus(options.sessionDir + '/resume-prompts');
       console.log('');
       console.log(formatDiscoveryStatus(discoveryStatus));
       console.log('');
       break;
 
     default:
-      console.error(`Unknown restore-prompt action: ${action}`);
+      console.error(`Unknown resume-prompt action: ${action}`);
       console.error('Available actions: edit, show, info, list, test, delete, enable, disable, status, discovery-off, discovery-on, discovery-status');
       process.exit(1);
   }
@@ -703,7 +823,7 @@ function main() {
     case 'archive':
       archiveCommand(options);
       break;
-    case 'restore-prompt':
+    case 'resume-prompt':
       restorePromptCommand(options);
       break;
     case 'status':
