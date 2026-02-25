@@ -59,7 +59,7 @@ if (crossedThreshold) {
     config.thresholds,
     175000,
     200000,
-    'discord/#navi-code'
+    'discord/#dev-work'
   );
   
   console.log(warning);
@@ -91,7 +91,7 @@ if (backupThreshold) {
 console.log('=== Example 5: Generate Reset Prompt ===\n');
 
 const resetPrompt = generateResetPrompt('test-session-123', {
-  channel: 'discord/#navi-code',
+  channel: 'discord/#dev-work',
   percentage: 87.5
 });
 

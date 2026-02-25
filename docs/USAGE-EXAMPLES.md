@@ -6,7 +6,7 @@ Real-world scenarios and practical examples for Tide Watch.
 
 **Profile:**
 - Working on coding projects
-- Uses Discord for #navi-code channel
+- Uses Discord for #dev-work channel
 - Wants proactive warnings
 - Prefers minimal interruptions
 
