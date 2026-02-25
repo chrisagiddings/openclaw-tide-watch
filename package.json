@@ -1,10 +1,10 @@
 {
   "name": "tide-watch",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Proactive session capacity monitoring for OpenClaw",
   "main": "lib/capacity.js",
   "bin": {
-    "tide-watch": "./bin/tide-watch"
+    "tide-watch": "./bin/tide-watch.js"
   },
   "scripts": {
     "test": "jest",
