@@ -323,7 +323,7 @@ Help me reset this session and preserve context
 Your agent will:
 1. Save context to memory
 2. Backup session file
-3. Provide context restoration prompt
+3. Provide session resumption prompt
 4. Reset the session
 
 ### Explore Advanced Features

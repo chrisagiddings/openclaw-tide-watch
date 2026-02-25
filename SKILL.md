@@ -80,7 +80,7 @@ Once installed, I will:
    - Save important context to memory
    - Switch to lower-usage channels
    - Provide session reset commands
-   - Generate context restoration prompts
+   - Generate session resumption prompts
 
 ### Manual Check
 
@@ -101,7 +101,7 @@ Help me reset this session and preserve context
 I'll:
 1. Save current work to memory
 2. Backup the session file (if not already backed up)
-3. Provide a context restoration prompt
+3. Provide a session resumption prompt
 4. Reset the session
 
 ### Restore from Backup
@@ -160,7 +160,7 @@ When you add Tide Watch to your `HEARTBEAT.md`, I automatically:
    - Save context to memory
    - Switch to lower-usage channel
    - Provide session reset commands
-   - Generate context restoration prompts
+   - Generate session resumption prompts
 
 6. **Cleanup old backups**
    - Remove backups older than retention period (default: 7 days)

@@ -25,7 +25,7 @@ To disable automatic backups entirely, set:
 **Actions to suggest:**
 1. **Memory save**: Offer to save current context/decisions to `memory/YYYY-MM-DD.md` or project work logs
 2. **Channel switch**: Suggest moving to lower-usage session (webchat, DM, etc.)
-3. **Session reset**: Provide reset command and context-restoration prompt
+3. **Session reset**: Provide reset command and context-resumption prompt
 4. **File reference**: For project work, remind that docs persist in files
 
 **Implementation:**
@@ -42,17 +42,17 @@ To disable automatic backups entirely, set:
 
 **On session start or after reset:**
 
-1. **Check for restoration prompt:**
-   - Path: `~/.openclaw/agents/main/sessions/restore-prompts/<session-id>.md`
-   - Alternative: `~/.openclaw/agents/main/sessions/restore-prompts/default.md`
+1. **Check for resumption prompt:**
+   - Path: `~/.openclaw/agents/main/sessions/resume-prompts/<session-id>.md`
+   - Alternative: `~/.openclaw/agents/main/sessions/resume-prompts/default.md`
 
-2. **If restoration prompt exists:**
+2. **If resumption prompt exists:**
    - Check if enabled (no `.disabled` marker file)
    - Read the file contents
    - Apply the context from the prompt
-   - Acknowledge restoration briefly: "✅ Session restored from restoration prompt. Ready to continue [project]!"
+   - Acknowledge resumption briefly: "✅ Session resumed from resumption prompt. Ready to continue [project]!"
 
-3. **If no restoration prompt exists:**
+3. **If no resumption prompt exists:**
    - Continue with normal session start (no error message)
    - Optionally suggest creating one (see feature discovery below)
 
@@ -62,7 +62,7 @@ To disable automatic backups entirely, set:
 - Session context is minimal/empty
 
 **Restoration prompt location:**
-`~/.openclaw/agents/main/sessions/restore-prompts/<session-id>.md`
+`~/.openclaw/agents/main/sessions/resume-prompts/<session-id>.md`
 
 **Check if enabled:**
 - Enabled by default if prompt file exists
@@ -70,30 +70,30 @@ To disable automatic backups entirely, set:
 
 **Manual trigger (fallback):**
 
-User can explicitly request restoration at any time (not just on reset):
+User can explicitly request resumption at any time (not just on reset):
 
 **Recognize these triggers:**
-- "load my restoration prompt"
-- "restore from restoration prompt"
-- "apply my restoration prompt"
-- "use my restoration prompt"  
-- "load session restoration prompt"
+- "load my resumption prompt"
+- "resume from resumption prompt"
+- "apply my resumption prompt"
+- "use my resumption prompt"  
+- "load session resumption prompt"
 
 **Process:**
-1. Check for prompt file: `restore-prompts/<session-id>.md`
+1. Check for prompt file: `resume-prompts/<session-id>.md`
 2. Check enabled/disabled state
 3. If prompt exists and enabled:
    - Read the file
    - Apply the context
-   - Respond: "✅ Restoration prompt loaded for [project/channel]. Context restored: [key points]. Ready to continue. What would you like to work on?"
+   - Respond: "✅ Resumption prompt loaded for [project/channel]. Context resumed: [key points]. Ready to continue. What would you like to work on?"
 
 4. If prompt exists but disabled:
-   - Ask: "Restoration prompt is currently disabled for this session. Would you like me to load it anyway (one-time)?"
+   - Ask: "Resumption prompt is currently disabled for this session. Would you like me to load it anyway (one-time)?"
    - If user confirms: Load despite disabled state
    - If user declines: Skip loading
 
 5. If prompt doesn't exist:
-   - Respond: "No restoration prompt found for this session. Would you like to create one? I can help you set up a restoration prompt. Run: tide-watch restore-prompt edit --session <session-id>"
+   - Respond: "No resumption prompt found for this session. Would you like to create one? I can help you set up a resumption prompt. Run: tide-watch resume-prompt edit --session <session-id>"
 
 **Manual loading works:**
 - At any time (not just session start)
@@ -104,7 +104,7 @@ User can explicitly request restoration at any time (not just on reset):
 **Feature discovery and guided creation:**
 
 **Check if discovery is enabled:**
-- Path: `~/.openclaw/agents/main/sessions/restore-prompts/.no-discovery`
+- Path: `~/.openclaw/agents/main/sessions/resume-prompts/.no-discovery`
 - If this file exists: Skip all discovery prompts (feature is disabled)
 - If file doesn't exist: Continue with discovery below
 
@@ -117,11 +117,11 @@ User can explicitly request restoration at any time (not just on reset):
 - ❌ More than once per session (avoid nagging)
 
 **Discovery message (brief, non-intrusive):**
-"💡 Tip: You can create a restoration prompt to help me remember project context after resets. Interested?"
+"💡 Tip: You can create a resumption prompt to help me remember project context after resets. Interested?"
 
 **If user agrees, guide step-by-step:**
 
-1. "Great! Let's create a restoration prompt. I'll ask a few quick questions. You can skip any by saying 'skip'."
+1. "Great! Let's create a resumption prompt. I'll ask a few quick questions. You can skip any by saying 'skip'."
 
 2. Ask:
    - "What project or topic is this session for? (e.g., 'Web app development', 'Research project', 'Writing tasks')"
@@ -136,11 +136,11 @@ User can explicitly request restoration at any time (not just on reset):
    - Add session metadata (channel, label)
 
 4. Save and confirm:
-   "✅ Restoration prompt created! Saved to: restore-prompts/<session-id>.md
+   "✅ Resumption prompt created! Saved to: resume-prompts/<session-id>.md
    
    Next time this session resets, I'll automatically load this context.
    
-   You can edit anytime: tide-watch restore-prompt edit --session <id>"
+   You can edit anytime: tide-watch resume-prompt edit --session <id>"
 
 **If user declines:**
 - Don't ask again this session
@@ -159,7 +159,7 @@ This makes creation easier - user just confirms/edits rather than writing from s
 **During capacity warnings (optional reminder):**
 
 At 90%+ capacity, include brief reminder:
-"💡 Create a restoration prompt for quick recovery after reset: tide-watch restore-prompt edit --session <id>"
+"💡 Create a resumption prompt for quick recovery after reset: tide-watch resume-prompt edit --session <id>"
 
 Don't make it the focus - just a helpful aside in the warning message.
 

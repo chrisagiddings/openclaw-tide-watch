@@ -49,7 +49,7 @@ Perfect alignment. A monitoring skill that *only monitors* is exactly what you'd
    - Save context to `memory/YYYY-MM-DD.md`
    - Switch to lower-usage channels
    - Back up session files (user's own files)
-   - Generate context restoration prompts
+   - Generate session resumption prompts
 
 **Scope boundaries:**
 - ✅ All actions relate directly to session monitoring

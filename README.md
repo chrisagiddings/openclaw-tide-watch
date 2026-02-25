@@ -197,7 +197,7 @@ Help me reset this session and preserve context
 Your agent will:
 1. Save current work to memory
 2. Backup the session file
-3. Provide a context restoration prompt
+3. Provide a session resumption prompt
 4. Reset the session
 
 ## 💾 Automatic Backups
@@ -327,7 +327,7 @@ Tide Watch dynamically reads your `AGENTS.md` configuration every time it checks
 - 🟠 Warning at 85% (170k tokens) — "Finish task and reset"
 - 🔴 Warning at 90% (180k tokens) — "Ready to help you reset"
 - Context saved to memory before reset
-- Clean restoration prompt generated
+- Clean resumption prompt generated
 
 ## 🔧 How It Works
 
@@ -374,7 +374,7 @@ Check context usage
 - ✅ **Retention management** (auto-cleanup old backups)
 - ✅ Memory save suggestions
 - ✅ Session reset assistance
-- ✅ Context restoration prompts
+- ✅ Session resumption prompts
 - ✅ Model/provider agnostic
 - ✅ Heartbeat integration
 
