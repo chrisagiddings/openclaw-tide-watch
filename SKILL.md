@@ -1,6 +1,6 @@
 ---
 name: tide-watch
-description: Proactive session capacity monitoring for OpenClaw. Get warned at 75%, 85%, 90%, and 95% capacity thresholds before context windows overflow. Supports session health checks, auto-backup before resets, and capacity reporting across all active sessions. Works with any model or provider.
+description: Proactive session capacity monitoring and management for OpenClaw. Prevents context window lockups by warning at configurable thresholds (75%, 85%, 90%, 95%), automatically backing up sessions before resets, and managing session resumption prompts. Use when working on long-running projects, managing multiple conversation channels (Discord, Telegram, webchat), or preventing lost work from full context windows. Includes CLI tools for capacity checks, cross-session dashboards, archive management, and session resumption. Supports any model or provider.
 homepage: https://github.com/chrisagiddings/openclaw-tide-watch
 metadata:
   openclaw:
