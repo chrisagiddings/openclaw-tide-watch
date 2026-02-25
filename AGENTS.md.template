@@ -119,11 +119,11 @@ User can explicitly request restoration at any time (not just on reset):
 1. "Great! Let's create a restoration prompt. I'll ask a few quick questions. You can skip any by saying 'skip'."
 
 2. Ask:
-   - "What project or topic is this session for? (e.g., 'Yatta! development')"
-   - "Where are the important files? (e.g., '~/clawd/projects/yatta/')"
-   - "What's your current focus? (e.g., 'Email features')"
-   - "Any important workflow rules? (e.g., 'Always use Lovable prompts')"
-   - "Any constraints or things NOT to do? (e.g., 'Never edit code directly')"
+   - "What project or topic is this session for? (e.g., 'Web app development', 'Research project', 'Writing tasks')"
+   - "Where are the important files? (e.g., '~/projects/myapp/', '~/Documents/research/')"
+   - "What's your current focus? (e.g., 'API integration', 'Chapter 3', 'Bug fixes')"
+   - "Any important workflow rules? (e.g., 'Always test before committing', 'Use specific format')"
+   - "Any constraints or things NOT to do? (e.g., 'Don't modify config files', 'Preserve existing structure')"
 
 3. Generate prompt content from answers:
    - Pre-fill template with user's responses
