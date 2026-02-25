@@ -1,6 +1,6 @@
 {
   "name": "tide-watch",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Proactive session capacity monitoring for OpenClaw",
   "main": "lib/capacity.js",
   "bin": {
@@ -9,7 +9,8 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "postinstall": "chmod +x bin/tide-watch.js"
   },
   "jest": {
     "testEnvironment": "node",
