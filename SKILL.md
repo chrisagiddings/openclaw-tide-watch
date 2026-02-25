@@ -7,7 +7,7 @@ repository: https://github.com/chrisagiddings/openclaw-tide-watch
 metadata:
   openclaw:
     emoji: "🌊"
-    version: "1.0.2"
+    version: "1.0.3"
     disable-model-invocation: false
     capabilities:
       - session-monitoring
@@ -21,27 +21,36 @@ metadata:
         - npm
       config:
         - "~/.openclaw/agents/main/sessions/"
+      engines:
+        node: ">=14.0.0"
     install:
-      type: hybrid
-      modes:
-        - name: directives-only
-          description: "AGENTS.md/HEARTBEAT.md directives for automatic monitoring"
-          requires: []
-          code-execution: false
-          files-modified: 
-            - "~/clawd/AGENTS.md"
-            - "~/clawd/HEARTBEAT.md"
-        - name: cli-tools
-          description: "Optional Node.js CLI for manual capacity checks and management"
-          requires: 
-            - node
-            - npm
-          code-execution: true
-          install-command: "npm link"
-          files-installed:
-            - "bin/tide-watch"
-            - "lib/capacity.js"
-            - "lib/resumption.js"
+      - type: directives
+        description: "AGENTS.md/HEARTBEAT.md directives for automatic monitoring (recommended)"
+        requires: []
+        code-execution: false
+        command: null
+        files-modified:
+          - "~/clawd/AGENTS.md"
+          - "~/clawd/HEARTBEAT.md"
+      - type: npm
+        description: "Optional Node.js CLI for manual capacity checks and management"
+        directory: "."
+        command: "npm link"
+        requires:
+          - node>=14.0.0
+          - npm
+        code-execution: true
+        dependencies:
+          dev:
+            - "jest@^30.2.0"
+          runtime: []
+        binaries:
+          - name: tide-watch
+            path: "./bin/tide-watch"
+        files-installed:
+          - "bin/tide-watch"
+          - "lib/capacity.js"
+          - "lib/resumption.js"
     credentials:
       required: false
       types: []
@@ -134,6 +143,30 @@ Proactive session capacity monitoring for OpenClaw.
 - Moves: `~/.openclaw/agents/main/sessions/archive/` (archived sessions)
 
 **Network Activity:** **NONE** - All operations are local filesystem only.
+
+### Runtime Requirements
+
+**Mode 1 (Directives-Only):**
+- **Node.js:** Not required
+- **npm:** Not required
+- **Dependencies:** None
+- **Binary:** None
+- **Installation:** Copy templates to workspace config files
+
+**Mode 2 (CLI Tools - Optional):**
+- **Node.js:** v14.0.0 or later required
+- **npm:** Any recent version
+- **Dependencies:** 
+  - Development: `jest@^30.2.0` (for testing only)
+  - Runtime: None (zero production dependencies)
+- **Binary:** `tide-watch` (installed globally via npm link)
+- **Installation:** `git clone` + `npm link`
+
+**Why zero runtime dependencies?**
+- Uses only Node.js built-in modules (`fs`, `path`, `child_process`)
+- No external API clients
+- No network libraries
+- Minimal attack surface
 
 ### Recommendation
 
