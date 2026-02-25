@@ -24,11 +24,17 @@ Tide Watch is internally coherent and proportionate to its stated purpose. All c
 **Purpose:** Session capacity monitoring and management for OpenClaw  
 **Description:** Proactive session capacity monitoring to prevent context window lockups
 
+**Architecture:** **Hybrid Skill**
+- **Part 1:** AGENTS.md directives (runtime instructions for automatic monitoring)
+- **Part 2:** Optional Node.js CLI tool (for manual capacity checks and management)
+- **Code files:** Yes - bin/tide-watch (CLI), lib/*.js (library code), tests/*.js
+- **Install:** Git clone + optional `npm link` for CLI access
+
 **Core functionality:**
-- Monitor OpenClaw session token usage
+- Monitor OpenClaw session token usage (via directives + CLI)
 - Warn at configurable thresholds (75%, 85%, 90%, 95%)
-- Archive old sessions
-- Manage session resumption prompts
+- Archive old sessions (CLI tool)
+- Manage session resumption prompts (CLI tool)
 - Provide CLI tools for manual capacity checks
 
 ---
@@ -93,15 +99,15 @@ Tide Watch is internally coherent and proportionate to its stated purpose. All c
 
 ---
 
-### 3. Install Mechanism Risk ✅ **OK** (Lowest Risk)
+### 3. Install Mechanism Risk ✅ **OK** (Low Risk)
 
-**Assessment:** Instruction-only skill with optional CLI tool.
+**Assessment:** Hybrid skill with AGENTS.md directives + optional CLI tool (Node.js package).
 
 **Install specifications:**
-- **Type:** npm package (local development)
-- **Install method:** `npm link` (creates global symlink)
-- **Code files:** Yes (CLI tool + library code)
-- **Extract/download:** No
+- **Type:** npm package (Node.js CLI tool)
+- **Install method:** `npm link` (creates global symlink) or manual git clone
+- **Code files:** Yes - CLI tool (bin/tide-watch) + library code (lib/*.js)
+- **Extract/download:** No (git clone from GitHub)
 - **Third-party URLs:** No
 
 **Risk factors:**
@@ -121,9 +127,9 @@ Tide Watch is internally coherent and proportionate to its stated purpose. All c
 }
 ```
 
-**Risk level:** **LOWEST** (instruction-only with optional dev tool)
+**Risk level:** **LOW** (Hybrid: directives + Node.js CLI tool)
 
-**Verdict:** Install mechanism is transparent and safe.
+**Verdict:** Install mechanism is transparent. Code is fully inspectable. Users should review lib/*.js and package.json before running `npm link`, as with any Node.js CLI tool.
 
 ---
 
@@ -235,7 +241,7 @@ Tide Watch is internally coherent and proportionate to its stated purpose. All c
 |-----------|--------|--------|
 | Purpose & Capability | ✅ **OK** | All capabilities align with session monitoring |
 | Instruction Scope | ✅ **OK** | Instructions constrained to session directory |
-| Install Mechanism | ✅ **OK** | Instruction-only + optional npm CLI (lowest risk) |
+| Install Mechanism | ✅ **OK** | Hybrid: directives + Node.js CLI tool (low risk) |
 | Credentials | ✅ **OK** | Zero credential requirements |
 | Persistence & Privilege | ✅ **OK** | Normal invocation model, no special access |
 
@@ -283,12 +289,46 @@ Tide Watch is a session monitoring tool that helps prevent context window lockup
 
 ---
 
+## Clarification: Hybrid Skill Architecture
+
+**Important:** Tide Watch is a **hybrid skill** combining two components:
+
+1. **AGENTS.md Directives** (runtime instructions)
+   - Automatic capacity monitoring via heartbeat
+   - Warning thresholds (75%, 85%, 90%, 95%)
+   - Session resumption prompt auto-loading
+   - No code execution required for basic monitoring
+
+2. **Node.js CLI Tool** (optional, requires installation)
+   - Manual capacity checks (`tide-watch status`)
+   - Cross-session dashboard (`tide-watch dashboard`)
+   - Archive management (`tide-watch archive`)
+   - Resumption prompt management (`tide-watch resume-prompt`)
+   - Requires: `git clone` + optional `npm link`
+
+**Code Files Present:**
+- `bin/tide-watch` - CLI entry point
+- `lib/capacity.js` - Session parsing and capacity calculations
+- `lib/resumption.js` - Resumption prompt management
+- `tests/*.js` - Test suite (113 tests)
+- `package.json` - npm package manifest
+
+**Network Activity:** None (all operations are local filesystem only)
+
+**Installation:**
+- Basic monitoring: Copy AGENTS.md.template directives (no code execution)
+- CLI tools: `git clone` + `npm link` (requires Node.js runtime)
+
+This is not a pure "instruction-only" skill. It includes executable code for the CLI tool.
+
+---
+
 ## Conclusion
 
 **Security Assessment:** ✅ **PASS**  
 **Ready for ClawHub publication:** **YES**
 
-Tide Watch is a well-designed, internally coherent session management tool. All capabilities align with its stated purpose. No security concerns identified.
+Tide Watch is a well-designed, internally coherent session management tool. All capabilities align with its stated purpose. No security concerns identified beyond the need for users to inspect code before running `npm link` (standard practice for any CLI tool).
 
 **Recommendations:**
 1. ✅ Proceed with ClawHub publication
