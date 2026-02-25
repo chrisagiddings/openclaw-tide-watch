@@ -4,57 +4,7 @@ description: Proactive session capacity monitoring and management for OpenClaw. 
 author: Chris Giddings
 homepage: https://github.com/chrisagiddings/openclaw-tide-watch
 repository: https://github.com/chrisagiddings/openclaw-tide-watch
-metadata:
-  openclaw:
-    emoji: "🌊"
-    version: "1.0.3"
-    disable-model-invocation: false
-    capabilities:
-      - session-monitoring
-      - capacity-warnings
-      - session-backup
-      - session-restoration
-      - file-operations-local
-    requires:
-      bins:
-        - node
-        - npm
-      config:
-        - "~/.openclaw/agents/main/sessions/"
-      engines:
-        node: ">=14.0.0"
-    install:
-      - type: directives
-        description: "AGENTS.md/HEARTBEAT.md directives for automatic monitoring (recommended)"
-        requires: []
-        code-execution: false
-        command: null
-        files-modified:
-          - "~/clawd/AGENTS.md"
-          - "~/clawd/HEARTBEAT.md"
-      - type: npm
-        description: "Optional Node.js CLI for manual capacity checks and management"
-        directory: "."
-        command: "npm link"
-        requires:
-          - node>=14.0.0
-          - npm
-        code-execution: true
-        dependencies:
-          dev:
-            - "jest@^30.2.0"
-          runtime: []
-        binaries:
-          - name: tide-watch
-            path: "./bin/tide-watch"
-        files-installed:
-          - "bin/tide-watch"
-          - "lib/capacity.js"
-          - "lib/resumption.js"
-    credentials:
-      required: false
-      types: []
-      notes: "No external credentials required. Operates on local OpenClaw session files only."
+metadata: {"openclaw":{"emoji":"🌊","version":"1.0.4","disable-model-invocation":false,"capabilities":["session-monitoring","capacity-warnings","session-backup","session-restoration","file-operations-local"],"requires":{"bins":["node","npm"],"config":["~/.openclaw/agents/main/sessions/"],"engines":{"node":">=14.0.0"}},"install":[{"type":"directives","description":"AGENTS.md/HEARTBEAT.md directives for automatic monitoring (recommended - no code execution)","requires":[],"code-execution":false,"command":null,"files-modified":["~/clawd/AGENTS.md","~/clawd/HEARTBEAT.md"]},{"type":"npm","description":"Optional Node.js CLI for manual capacity checks and management","directory":".","command":"npm link","requires":["node>=14.0.0","npm"],"code-execution":true,"dependencies":{"dev":["jest@^30.2.0"],"runtime":[]},"binaries":[{"name":"tide-watch","path":"./bin/tide-watch"}],"files-installed":["bin/tide-watch","lib/capacity.js","lib/resumption.js"]}],"credentials":{"required":false,"types":[],"notes":"No external credentials required. Operates on local OpenClaw session files only."}}}
 ---
 
 # Tide Watch 🌊
