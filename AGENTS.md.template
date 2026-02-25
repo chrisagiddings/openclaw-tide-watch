@@ -103,7 +103,12 @@ User can explicitly request restoration at any time (not just on reset):
 
 **Feature discovery and guided creation:**
 
-**When to offer creation:**
+**Check if discovery is enabled:**
+- Path: `~/.openclaw/agents/main/sessions/restore-prompts/.no-discovery`
+- If this file exists: Skip all discovery prompts (feature is disabled)
+- If file doesn't exist: Continue with discovery below
+
+**When to offer creation (if discovery enabled):**
 - ✅ Right after session reset (first few messages) AND no prompt exists
 - ✅ User manually re-explains project context (signals need for persistence)
 - ✅ During capacity warnings (90%+) to prepare for potential reset

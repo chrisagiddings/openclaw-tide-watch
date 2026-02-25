@@ -74,6 +74,9 @@ RESTORE-PROMPT ACTIONS:
   enable                 Enable auto-loading for session
   disable                Disable auto-loading for session
   status                 Check enabled/disabled state
+  discovery-off          Disable feature discovery globally
+  discovery-on           Enable feature discovery globally
+  discovery-status       Check discovery enabled/disabled state
 
 `.trim();
 
@@ -430,7 +433,12 @@ function restorePromptCommand(options) {
     disableRestorePrompt,
     enableRestorePrompt,
     getRestorePromptStatus,
-    formatRestorePromptStatus
+    formatRestorePromptStatus,
+    isDiscoveryEnabled,
+    disableDiscovery,
+    enableDiscovery,
+    getDiscoveryStatus,
+    formatDiscoveryStatus
   } = require('../lib/restoration');
 
   const action = process.argv[3]; // restore-prompt <action>
@@ -641,9 +649,37 @@ function restorePromptCommand(options) {
       }
       break;
 
+    case 'discovery-off':
+      // Disable feature discovery
+      disableDiscovery(options.sessionDir + '/restore-prompts');
+      console.log(`✅ Feature discovery disabled globally`);
+      console.log(`   Agents will no longer offer to create restoration prompts`);
+      console.log('');
+      console.log(`   Auto-loading and manual triggers still work`);
+      console.log(`   Existing prompts continue to function normally`);
+      console.log('');
+      console.log(`   To re-enable: tide-watch restore-prompt discovery-on\n`);
+      break;
+
+    case 'discovery-on':
+      // Enable feature discovery
+      enableDiscovery(options.sessionDir + '/restore-prompts');
+      console.log(`✅ Feature discovery enabled globally`);
+      console.log(`   Agents will offer to create restoration prompts after resets`);
+      console.log(`   Capacity warnings will include restoration prompt reminders\n`);
+      break;
+
+    case 'discovery-status':
+      // Show discovery status
+      const discoveryStatus = getDiscoveryStatus(options.sessionDir + '/restore-prompts');
+      console.log('');
+      console.log(formatDiscoveryStatus(discoveryStatus));
+      console.log('');
+      break;
+
     default:
       console.error(`Unknown restore-prompt action: ${action}`);
-      console.error('Available actions: edit, show, info, list, test, delete, enable, disable, status');
+      console.error('Available actions: edit, show, info, list, test, delete, enable, disable, status, discovery-off, discovery-on, discovery-status');
       process.exit(1);
   }
 }
