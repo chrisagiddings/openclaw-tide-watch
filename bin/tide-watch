@@ -485,18 +485,18 @@ function resolveSessionInput(input, sessionDir) {
  */
 function restorePromptCommand(options) {
   const {
-    hasRestorePrompt,
-    loadRestorePrompt,
-    deleteRestorePrompt,
-    listRestorePrompts,
-    editRestorePrompt,
-    getRestorePromptInfo,
-    formatRestorePromptInfo,
-    isRestorePromptEnabled,
-    disableRestorePrompt,
-    enableRestorePrompt,
-    getRestorePromptStatus,
-    formatRestorePromptStatus,
+    hasResumePrompt,
+    loadResumePrompt,
+    deleteResumePrompt,
+    listResumePrompts,
+    editResumePrompt,
+    getResumePromptInfo,
+    formatResumePromptInfo,
+    isResumePromptEnabled,
+    disableResumePrompt,
+    enableResumePrompt,
+    getResumePromptStatus,
+    formatResumePromptStatus,
     isDiscoveryEnabled,
     disableDiscovery,
     enableDiscovery,
@@ -531,7 +531,7 @@ function restorePromptCommand(options) {
       }
 
       console.log(`Opening editor for session ${editSessionId}...\n`);
-      const success = editRestorePrompt(editSessionId, options.sessionDir + '/resume-prompts');
+      const success = editResumePrompt(editSessionId, options.sessionDir + '/resume-prompts');
       
       if (success) {
         console.log(`\n✅ Resumption prompt saved for session ${editSessionId}`);
@@ -554,7 +554,7 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const prompt = loadRestorePrompt(showSessionId, options.sessionDir + '/resume-prompts');
+      const prompt = loadResumePrompt(showSessionId, options.sessionDir + '/resume-prompts');
       
       if (!prompt) {
         console.log(`No resumption prompt found for session ${showSessionId}`);
@@ -583,20 +583,20 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const info = getRestorePromptInfo(infoSessionId, options.sessionDir + '/resume-prompts');
+      const info = getResumePromptInfo(infoSessionId, options.sessionDir + '/resume-prompts');
       
       if (!info) {
         console.log(`No resumption prompt found for session ${infoSessionId}\n`);
       } else {
         console.log(`\nResumption Prompt Info:\n`);
-        console.log(formatRestorePromptInfo(info));
+        console.log(formatResumePromptInfo(info));
         console.log('');
       }
       break;
 
     case 'list':
       // List all resumption prompts
-      const prompts = listRestorePrompts(options.sessionDir + '/resume-prompts');
+      const prompts = listResumePrompts(options.sessionDir + '/resume-prompts');
       
       if (prompts.length === 0) {
         console.log('No resumption prompts found.');
@@ -641,7 +641,7 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const testPrompt = loadRestorePrompt(testSessionId, options.sessionDir + '/resume-prompts');
+      const testPrompt = loadResumePrompt(testSessionId, options.sessionDir + '/resume-prompts');
       
       if (!testPrompt) {
         console.log(`No resumption prompt found for session ${testSessionId}\n`);
@@ -678,7 +678,7 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const deleted = deleteRestorePrompt(deleteSessionId, options.sessionDir + '/resume-prompts');
+      const deleted = deleteResumePrompt(deleteSessionId, options.sessionDir + '/resume-prompts');
       
       if (deleted) {
         console.log(`✅ Deleted resumption prompt for session ${deleteSessionId}\n`);
@@ -702,7 +702,7 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const enabled = enableRestorePrompt(enableSessionId, options.sessionDir + '/resume-prompts');
+      const enabled = enableResumePrompt(enableSessionId, options.sessionDir + '/resume-prompts');
       
       if (enabled) {
         console.log(`✅ Enabled resumption prompt for session ${enableSessionId}`);
@@ -729,7 +729,7 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const disabled = disableRestorePrompt(disableSessionId, options.sessionDir + '/resume-prompts');
+      const disabled = disableResumePrompt(disableSessionId, options.sessionDir + '/resume-prompts');
       
       if (disabled) {
         console.log(`✅ Disabled resumption prompt for session ${disableSessionId}`);
@@ -757,14 +757,14 @@ function restorePromptCommand(options) {
         process.exit(1);
       }
 
-      const statusInfo = getRestorePromptStatus(statusSessionId, options.sessionDir + '/resume-prompts');
+      const statusInfo = getResumePromptStatus(statusSessionId, options.sessionDir + '/resume-prompts');
       
       if (!statusInfo) {
         console.log(`\nNo resumption prompt found for session ${statusSessionId}`);
         console.log(`Create one with: tide-watch resume-prompt edit --session ${statusSessionId}\n`);
       } else {
         console.log(`\nResumption Prompt Status:\n`);
-        console.log(formatRestorePromptStatus(statusInfo));
+        console.log(formatResumePromptStatus(statusInfo));
         console.log('');
       }
       break;
