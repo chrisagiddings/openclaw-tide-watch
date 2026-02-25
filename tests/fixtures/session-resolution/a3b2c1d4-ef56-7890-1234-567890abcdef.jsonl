@@ -1,0 +1,2 @@
+{"timestamp":"2026-02-24T10:00:00Z","sessionKey":"a3b2c1d4-ef56-7890-1234-567890abcdef","channel":"discord","label":"#general","message":{"role":"user","content":"Test"},"usage":{"input":5,"output":10,"totalTokens":15}}
+{"timestamp":"2026-02-24T10:01:00Z","sessionKey":"a3b2c1d4-ef56-7890-1234-567890abcdef","channel":"discord","label":"#general","message":{"role":"assistant","content":"Response","model":"anthropic/claude-sonnet-4-5"},"usage":{"input":20,"output":25,"totalTokens":45}}

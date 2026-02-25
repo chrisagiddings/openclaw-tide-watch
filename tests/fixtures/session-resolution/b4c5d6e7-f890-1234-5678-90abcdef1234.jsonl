@@ -1,0 +1,2 @@
+{"timestamp":"2026-02-24T14:00:00Z","sessionKey":"b4c5d6e7-f890-1234-5678-90abcdef1234","channel":"webchat","message":{"role":"user","content":"Hello webchat"},"usage":{"input":15,"output":30,"totalTokens":45}}
+{"timestamp":"2026-02-24T14:05:00Z","sessionKey":"b4c5d6e7-f890-1234-5678-90abcdef1234","channel":"webchat","message":{"role":"assistant","content":"Hi!","model":"anthropic/claude-sonnet-4-5"},"usage":{"input":50,"output":60,"totalTokens":110}}

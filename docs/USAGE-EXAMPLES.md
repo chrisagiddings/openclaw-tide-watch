@@ -317,7 +317,84 @@ tide-watch dashboard --active 24 --json | jq '.sessions | length'
 tide-watch report --all --json --pretty > capacity-report-$(date +%Y%m%d).json
 ```
 
-## Scenario 9: Integration with Scripts
+## Scenario 9: Flexible Session Lookup
+
+**Using human-friendly session identifiers:**
+
+```bash
+# Instead of remembering full UUIDs...
+tide-watch check --session 6eff94ac-dde7-4621-acaf-66bb431db822  # ❌ Hard to remember
+
+# Use shorter, human-friendly identifiers! ✅
+
+# By shortened ID (first 8+ characters)
+tide-watch check --session 6eff94ac
+
+# By Discord/Telegram channel label
+tide-watch check --session "#navi-code-yatta"
+tide-watch resume-prompt edit --session "#dev-work"
+
+# By channel name (if you only have one)
+tide-watch check --session discord
+tide-watch check --session webchat
+
+# By channel + label combo
+tide-watch check --session "discord/#navi-code-yatta"
+tide-watch resume-prompt show --session "telegram/#personal"
+
+# Works across all commands
+tide-watch resume-prompt edit --session "#navi-code-yatta"
+tide-watch resume-prompt show --session discord
+tide-watch resume-prompt info --session webchat
+tide-watch resume-prompt delete --session "#old-project"
+tide-watch resume-prompt enable --session slack
+tide-watch resume-prompt status --session "#dev-work"
+```
+
+**Practical workflow:**
+
+```bash
+# Morning routine: Check your main channels by name
+tide-watch check --session discord
+tide-watch check --session webchat
+
+# During work: Use labels for specific projects
+tide-watch resume-prompt edit --session "#yatta-development"
+tide-watch check --session "#client-project"
+
+# Evening cleanup: Archive by channel
+tide-watch report --json | jq -r '.[] | select(.channel=="telegram") | .sessionId' | \
+  while read sid; do
+    tide-watch archive --older-than 3d --session "$sid"
+  done
+```
+
+**Handling ambiguous matches:**
+
+```bash
+# If you have multiple Discord sessions:
+$ tide-watch check --session discord
+
+❌ Multiple sessions match "discord". Please be more specific.
+
+Matching sessions:
+  1. discord/#navi-code-yatta (6eff94ac)
+  2. discord/#general (a3b2c1d4)
+  3. discord/#dev-work (e5f6a7b8)
+
+# Solution: Use more specific identifier
+tide-watch check --session "#navi-code-yatta"        # By label
+tide-watch check --session "discord/#general"        # By combo
+tide-watch check --session 6eff94ac                  # By shortened ID
+```
+
+**Benefits:**
+- **No UUID memorization** - use labels/channels you already know
+- **Faster typing** - `#dev-work` instead of 40-character UUID
+- **Human-readable scripts** - easy to understand automation
+- **Helpful errors** - shows matches when ambiguous
+
+## Scenario 10: Integration with Scripts
 
 **Automated capacity monitoring:**
 
@@ -344,7 +421,7 @@ fi
 0 */4 * * * /path/to/capacity-check.sh
 ```
 
-## Scenario 10: Emergency Recovery
+## Scenario 11: Emergency Recovery
 
 **Session locked at 100%:**
 

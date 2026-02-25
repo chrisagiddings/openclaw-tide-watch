@@ -1,0 +1,2 @@
+{"timestamp":"2026-02-24T12:00:00Z","sessionKey":"6eff94ac-dde7-4621-acaf-66bb431db822","channel":"discord","label":"#navi-code-yatta","message":{"role":"user","content":"Hello"},"usage":{"input":10,"output":20,"totalTokens":30}}
+{"timestamp":"2026-02-24T12:05:00Z","sessionKey":"6eff94ac-dde7-4621-acaf-66bb431db822","channel":"discord","label":"#navi-code-yatta","message":{"role":"assistant","content":"Hi there!","model":"anthropic/claude-sonnet-4-5"},"usage":{"input":40,"output":50,"totalTokens":90}}

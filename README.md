@@ -137,6 +137,56 @@ cd ~/clawd/skills/tide-watch  # or wherever you cloned it
 npm link                       # Creates global tide-watch command
 ```
 
+### Flexible Session Lookup
+
+Tide Watch supports multiple ways to specify sessions - no need to remember full UUIDs!
+
+**Supported formats:**
+- **Full session ID** (UUID): `6eff94ac-dde7-4621-acaf-66bb431db822`
+- **Shortened ID**: `6eff94ac` (first 8+ characters)
+- **Session label**: `"#navi-code-yatta"` (from Discord/groupChannel)
+- **Channel name**: `discord`, `webchat`, `telegram`, etc.
+- **Channel + label**: `"discord/#navi-code-yatta"`
+
+**Examples:**
+```bash
+# By full UUID
+tide-watch check --session 6eff94ac-dde7-4621-acaf-66bb431db822
+
+# By shortened ID (easier!)
+tide-watch check --session 6eff94ac
+
+# By Discord/Telegram channel label
+tide-watch check --session "#navi-code-yatta"
+
+# By channel name (if only one session)
+tide-watch check --session discord
+
+# By channel + label combo
+tide-watch check --session "discord/#navi-code-yatta"
+
+# Works with all session commands
+tide-watch resume-prompt edit --session "#navi-code-yatta"
+tide-watch resume-prompt show --session discord
+tide-watch resume-prompt status --session webchat
+```
+
+**Ambiguous matches:**
+If multiple sessions match (e.g., two Discord channels), Tide Watch shows all matches and asks you to be more specific:
+```bash
+$ tide-watch check --session discord
+
+❌ Multiple sessions match "discord". Please be more specific.
+
+Matching sessions:
+  1. discord/#navi-code-yatta (6eff94ac)
+  2. discord/#general (a3b2c1d4)
+
+Please specify:
+  tide-watch check --session "discord/#navi-code-yatta"
+  tide-watch check --session 6eff94ac
+```
+
 ### Reset with Context Preservation
 
 When warned about high capacity:
