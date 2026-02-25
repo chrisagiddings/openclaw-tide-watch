@@ -2,6 +2,8 @@
 
 **Proactive session capacity monitoring for OpenClaw.**
 
+> 🚨 **SECURITY NOTICE:** v1.0.0 contains a shell injection vulnerability (CVE-2026-001). **Update to v1.0.1 immediately.** See [SECURITY-ADVISORY-CVE-2026-001.md](./SECURITY-ADVISORY-CVE-2026-001.md) for details.
+
 Never lose work to a full context window again. Tide Watch monitors your OpenClaw sessions and warns you before capacity limits lock you out.
 
 [![OpenClaw](https://img.shields.io/badge/OpenClaw-Compatible-blue)](https://openclaw.ai)
