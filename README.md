@@ -19,6 +19,20 @@ Get warned **before** your session context fills up:
 - 🔴 **90%** — "Session will lock soon!"
 - 🚨 **95%** — "CRITICAL: Save to memory NOW"
 
+## 💻 Requirements
+
+**Runtime:**
+- Node.js 14+ (for CLI tools mode)
+- ANSI-compatible terminal for live dashboard (most modern terminals)
+  - ✅ macOS: Terminal.app, iTerm2
+  - ✅ Linux: Most terminal emulators
+  - ✅ Windows: Windows Terminal, PowerShell 7+, Windows 10+ CMD
+  - ⚠️ Older terminals (pre-Windows 10 CMD) may not display colors
+
+**Directives-Only Mode:**
+- No Node.js required
+- Works through OpenClaw's built-in tools
+
 ## 📦 Installation
 
 ### Via ClawHub (Recommended)
