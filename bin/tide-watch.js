@@ -270,6 +270,9 @@ function statusCommand(options) {
  * Dashboard command: Visual overview with recommendations
  */
 function dashboardCommand(options) {
+  // Track previous session state for change detection (watch mode only)
+  let previousSessions = new Map();
+  
   const showDashboard = () => {
     let sessions = getAllSessions(options.sessionDir);
     
@@ -301,6 +304,12 @@ function dashboardCommand(options) {
       };
       console.log(formatJSON(data, options.pretty));
     } else {
+      // Compute changes if we're in watch mode and have previous state
+      let changes = null;
+      if (options.watch && previousSessions.size > 0) {
+        changes = computeChanges(previousSessions, sessions);
+      }
+      
       // Clear screen for watch mode using ANSI escape sequences
       // This provides smooth in-place updates without screen flashing
       if (options.watch) {
@@ -311,12 +320,20 @@ function dashboardCommand(options) {
         console.log(`Last updated: ${new Date().toLocaleString()}\n`);
       }
       
-      // Visual dashboard
-      console.log(formatDashboard(sessions));
+      // Visual dashboard with change highlighting (if available)
+      console.log(formatDashboard(sessions, changes));
       
       // Show filter info if active
       if (options.activeHours) {
         console.log(`Showing sessions active in last ${options.activeHours} hours\n`);
+      }
+      
+      // Update previous state for next iteration (watch mode only)
+      if (options.watch) {
+        previousSessions.clear();
+        sessions.forEach(session => {
+          previousSessions.set(session.sessionId, session.percentage);
+        });
       }
     }
   };
@@ -329,6 +346,46 @@ function dashboardCommand(options) {
     console.log('🔄 Watch mode active (refreshes every 10s). Press Ctrl+C to exit.\n');
     setInterval(showDashboard, 10000);
   }
+}
+
+/**
+ * Compute changes between previous and current session states
+ * @param {Map} previous - Map of sessionId -> previous percentage
+ * @param {Array} current - Current sessions array
+ * @returns {Map} Map of sessionId -> change info
+ */
+function computeChanges(previous, current) {
+  const changes = new Map();
+  
+  for (const session of current) {
+    const prevPercentage = previous.get(session.sessionId);
+    
+    if (prevPercentage === undefined) {
+      // New session appeared
+      changes.set(session.sessionId, { type: 'new' });
+    } else {
+      const delta = session.percentage - prevPercentage;
+      
+      if (Math.abs(delta) < 0.1) {
+        // No significant change (< 0.1%)
+        changes.set(session.sessionId, { type: 'unchanged' });
+      } else if (delta > 0) {
+        // Capacity increased (tokens consumed)
+        changes.set(session.sessionId, { 
+          type: 'increased', 
+          delta: delta 
+        });
+      } else {
+        // Capacity decreased (tokens freed - shouldn't happen but handle it)
+        changes.set(session.sessionId, { 
+          type: 'decreased', 
+          delta: Math.abs(delta)
+        });
+      }
+    }
+  }
+  
+  return changes;
 }
 
 /**
