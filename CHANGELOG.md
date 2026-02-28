@@ -5,6 +5,27 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-02-28
+
+### Fixed
+- Live dashboard refresh UX - eliminated screen flashing (Fixes #25)
+  - Replaced console.clear() with ANSI cursor positioning
+  - Smooth in-place updates without visible flicker
+  - 0.5-2.5 second gap eliminated
+
+### Added
+- Real-time change tracking and visual highlighting in live dashboard (Refs #25)
+  - Color-coded trend indicators: 🔴 Red ↑ (increasing), 🟢 Green ↓ (decreasing), 🟡 Yellow (new)
+  - Shows capacity delta percentage (+X.X% / -X.X%)
+  - Track session state between refreshes
+  - New Trend column in dashboard output
+  - Makes live monitoring actually useful for tracking progress
+
+### Changed
+- Dashboard watch mode now professional-grade terminal UI
+- ANSI escape sequences for smooth rendering
+- Differential updates show only what changed
+
 ## [1.1.1] - 2026-02-28
 
 ### Fixed
