@@ -5,6 +5,22 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2026-02-28
+
+### Changed
+- Gateway status check now fully async - eliminates ALL blocking (Fixes #27)
+  - Replaced execSync with exec (async callback-based)
+  - Dashboard refresh always instant (0ms, never blocks)
+  - First load shows "⏳ Checking..." then updates when complete
+  - Background check updates cache without blocking
+  - Reduced refresh interval from 60s to 30s
+
+### Performance
+- First load: instant (vs 500ms in v1.1.3)
+- Cache expiry: instant (vs 500ms in v1.1.3)
+- All dashboard refreshes: 0ms blocking (perfect smoothness)
+- Gateway status updates every 30 seconds in background
+
 ## [1.1.3] - 2026-02-28
 
 ### Fixed
