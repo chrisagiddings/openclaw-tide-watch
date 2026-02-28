@@ -48,6 +48,15 @@ OPTIONS:
   --pretty             Pretty-print JSON (requires --json)
   --watch              Live updates (dashboard only, refreshes every 10s)
   --session-dir <path> Custom session directory (default: ~/.openclaw/agents/main/sessions)
+  
+CONFIGURATION:
+  --refresh-interval <seconds>   Dashboard refresh interval (default: 10, min: 1, max: 300)
+  --gateway-interval <seconds>   Gateway status check interval (default: 30, min: 5, max: 600)
+  --gateway-timeout <seconds>    Gateway command timeout (default: 3, min: 1, max: 30)
+  
+  Config file: ~/.config/tide-watch/config.json
+  Env vars: TIDE_WATCH_REFRESH_INTERVAL, TIDE_WATCH_GATEWAY_INTERVAL, TIDE_WATCH_GATEWAY_TIMEOUT
+  Precedence: CLI flags > env vars > config file > defaults
 
 EXAMPLES:
   tide-watch check                        # Check current session
@@ -101,7 +110,11 @@ function parseArgs() {
     json: false,
     pretty: false,
     watch: false,
-    sessionDir: DEFAULT_SESSION_DIR
+    sessionDir: DEFAULT_SESSION_DIR,
+    // Config overrides (CLI flags)
+    refreshInterval: null,
+    gatewayInterval: null,
+    gatewayTimeout: null
   };
 
   for (let i = 1; i < args.length; i++) {
@@ -131,6 +144,12 @@ function parseArgs() {
       options.watch = true;
     } else if (arg === '--session-dir' && i + 1 < args.length) {
       options.sessionDir = args[++i];
+    } else if (arg === '--refresh-interval' && i + 1 < args.length) {
+      options.refreshInterval = parseInt(args[++i], 10);
+    } else if (arg === '--gateway-interval' && i + 1 < args.length) {
+      options.gatewayInterval = parseInt(args[++i], 10);
+    } else if (arg === '--gateway-timeout' && i + 1 < args.length) {
+      options.gatewayTimeout = parseInt(args[++i], 10);
     }
   }
 
@@ -270,6 +289,10 @@ function statusCommand(options) {
  * Dashboard command: Visual overview with recommendations
  */
 function dashboardCommand(options) {
+  // Apply config to capacity module (gateway intervals/timeout)
+  const { setConfig } = require('../lib/capacity');
+  setConfig(options.config);
+  
   // Track previous session state for change detection (watch mode only)
   let previousSessions = new Map();
   
@@ -341,10 +364,11 @@ function dashboardCommand(options) {
   // Show dashboard once
   showDashboard();
 
-  // Watch mode: refresh every 10 seconds
+  // Watch mode: refresh at configured interval
   if (options.watch && !options.json) {
-    console.log('🔄 Watch mode active (refreshes every 10s). Press Ctrl+C to exit.\n');
-    setInterval(showDashboard, 10000);
+    const intervalSeconds = options.config.refreshInterval;
+    console.log(`🔄 Watch mode active (refreshes every ${intervalSeconds}s). Press Ctrl+C to exit.\n`);
+    setInterval(showDashboard, intervalSeconds * 1000);
   }
 }
 
@@ -870,6 +894,20 @@ function restorePromptCommand(options) {
  */
 function main() {
   const options = parseArgs();
+
+  // Load configuration (merge CLI flags > env vars > config file > defaults)
+  const { loadConfig } = require('../lib/config');
+  const cliFlags = {};
+  if (options.refreshInterval !== null) cliFlags.refreshInterval = options.refreshInterval;
+  if (options.gatewayInterval !== null) cliFlags.gatewayInterval = options.gatewayInterval;
+  if (options.gatewayTimeout !== null) cliFlags.gatewayTimeout = options.gatewayTimeout;
+  
+  try {
+    options.config = loadConfig(cliFlags);
+  } catch (error) {
+    console.error(`❌ Configuration error: ${error.message}`);
+    process.exit(1);
+  }
 
   switch (options.command) {
     case 'check':
