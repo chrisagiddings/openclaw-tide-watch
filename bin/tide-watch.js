@@ -301,9 +301,13 @@ function dashboardCommand(options) {
       };
       console.log(formatJSON(data, options.pretty));
     } else {
-      // Clear screen for watch mode
+      // Clear screen for watch mode using ANSI escape sequences
+      // This provides smooth in-place updates without screen flashing
       if (options.watch) {
-        console.clear();
+        // Move cursor to home position (0,0)
+        process.stdout.write('\x1b[H');
+        // Clear from cursor to end of screen
+        process.stdout.write('\x1b[J');
         console.log(`Last updated: ${new Date().toLocaleString()}\n`);
       }
       
