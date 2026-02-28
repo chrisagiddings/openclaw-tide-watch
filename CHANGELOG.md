@@ -5,6 +5,20 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-02-28
+
+### Fixed
+- Gateway status check no longer blocks live dashboard refresh (Fixes #26)
+  - Cache gateway status for 60 seconds (instead of checking every 10s)
+  - Reduced timeout from 5000ms to 500ms (fail fast)
+  - Dashboard refresh now instant (no blocking on gateway check)
+  - Graceful fallback to cached status on timeout/error
+
+### Performance
+- Live dashboard refresh: instant (< 100ms instead of 1-2.5s)
+- Gateway status only checked once per minute
+- Eliminates "blink out of existence" issue in Terminal.app
+
 ## [1.1.2] - 2026-02-28
 
 ### Fixed

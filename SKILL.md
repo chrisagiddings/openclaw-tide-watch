@@ -4,7 +4,7 @@ description: Proactive session capacity monitoring and management for OpenClaw. 
 author: Chris Giddings
 homepage: https://github.com/chrisagiddings/openclaw-tide-watch
 repository: https://github.com/chrisagiddings/openclaw-tide-watch
-metadata: {"openclaw":{"emoji":"🌊","version":"1.1.2","disable-model-invocation":false,"capabilities":["session-monitoring","capacity-warnings","session-backup","session-restoration","file-operations-local"],"requires":{"bins":[],"anyBins":["node"],"config":["~/.openclaw/agents/main/sessions/"]},"install":[{"id":"npm","kind":"node","package":".","command":"npm link","bins":["tide-watch"],"label":"Install tide-watch CLI (requires Node.js 14+, optional for Directives-Only mode)"}],"credentials":{"required":false,"types":[],"notes":"No external credentials required. Operates on local OpenClaw session files only."}}}
+metadata: {"openclaw":{"emoji":"🌊","version":"1.1.3","disable-model-invocation":false,"capabilities":["session-monitoring","capacity-warnings","session-backup","session-restoration","file-operations-local"],"requires":{"bins":[],"anyBins":["node"],"config":["~/.openclaw/agents/main/sessions/"]},"install":[{"id":"npm","kind":"node","package":".","command":"npm link","bins":["tide-watch"],"label":"Install tide-watch CLI (requires Node.js 14+, optional for Directives-Only mode)"}],"credentials":{"required":false,"types":[],"notes":"No external credentials required. Operates on local OpenClaw session files only."}}}
 ---
 
 # Tide Watch 🌊
