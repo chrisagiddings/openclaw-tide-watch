@@ -5,6 +5,15 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-02-28
+
+### Fixed
+- Gateway status timeout increased to 3000ms (Fixes #28)
+  - v1.1.4 async check inherited 500ms timeout from v1.1.3 sync version
+  - Gateway probe takes 1-2 seconds, was timing out
+  - Increased to 3 seconds (async = no blocking)
+  - Gateway status now displays correctly ("🟢 Online")
+
 ## [1.1.4] - 2026-02-28
 
 ### Changed
