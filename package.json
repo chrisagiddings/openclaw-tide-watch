@@ -1,6 +1,6 @@
 {
   "name": "tide-watch",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Proactive session capacity monitoring for OpenClaw",
   "main": "lib/capacity.js",
   "bin": {

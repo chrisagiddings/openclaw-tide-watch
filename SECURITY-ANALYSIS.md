@@ -1,5 +1,7 @@
 # Security Analysis: Tide Watch
 
+> **⚠️ OUTDATED:** This analysis is from v1.0.0 (pre-release). See [SECURITY-ASSESSMENT-v1.1.0.md](./SECURITY-ASSESSMENT-v1.1.0.md) for current security assessment.
+
 **Date:** 2026-02-23  
 **Analyst:** Navi (OpenClaw AI Assistant)  
 **Reference:** [ClawHub Security Prompt](https://github.com/openclaw/clawhub/blob/9c31462f15ebadd7e808b3b32b23a518e8f1edc1/convex/lib/securityPrompt.ts)
