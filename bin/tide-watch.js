@@ -22,6 +22,8 @@ const {
   DEFAULT_SESSION_DIR
 } = require('../lib/capacity');
 
+const path = require('path');
+
 const USAGE = `
 Tide Watch 🌊 - OpenClaw Session Capacity Monitor
 
