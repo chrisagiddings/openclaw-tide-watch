@@ -468,8 +468,13 @@ function archiveCommand(options) {
     process.exit(1);
   }
 
-  // Get all sessions
-  let sessions = getAllSessions(options.sessionDir);
+  // Get all sessions (multi-agent support)
+  let sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+  
+  // Filter by agent if specified
+  if (options.agent) {
+    sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+  }
   
   if (sessions.length === 0) {
     console.log('No sessions found.');
@@ -534,7 +539,24 @@ function archiveCommand(options) {
   // Show results
   if (results.archived.length > 0) {
     console.log(`✅ Archived ${results.archived.length} session(s)`);
-    console.log(`   Location: ${options.sessionDir}/archive/${new Date().toISOString().split('T')[0]}/\n`);
+    
+    // Show archive locations (may be multiple in multi-agent mode)
+    const archiveDirs = new Set();
+    results.archived.forEach(archived => {
+      if (archived.archivedTo) {
+        archiveDirs.add(path.dirname(archived.archivedTo));
+      }
+    });
+    
+    if (archiveDirs.size === 1) {
+      console.log(`   Location: ${archiveDirs.values().next().value}/\n`);
+    } else if (archiveDirs.size > 1) {
+      console.log(`   Locations:`);
+      archiveDirs.forEach(dir => {
+        console.log(`     ${dir}/`);
+      });
+      console.log('');
+    }
   }
 
   if (results.failed.length > 0) {
