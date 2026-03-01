@@ -5,6 +5,27 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-03-01
+
+### Fixed
+- **Metadata: Declared OPENCLAW_SESSION_ID environment variable**
+  - Added to `requires.env.optional` in SKILL.md frontmatter
+  - Addresses ClawHub scan finding: UNDECLARED_ENV_VAR_OPENCLAW_SESSION_ID
+  - Env var is optional (only for --current flag, v1.3.4+)
+  - Not required for Directives-Only mode
+
+### Changed
+- **Security scan rating improvement**
+  - v1.3.5: BENIGN/SUSPICIOUS (undeclared env var)
+  - v1.3.6: Expected BENIGN/BENIGN (metadata corrected)
+
+### Impact
+- ClawHub automated eligibility checks now accurate
+- User expectations aligned with actual dependencies
+- No code changes - metadata fix only
+
+---
+
 ## [1.3.5] - 2026-03-01
 
 ### Fixed
