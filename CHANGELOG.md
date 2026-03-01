@@ -5,6 +5,66 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-03-01
+
+### Added
+- **Multi-agent aware session recommendations** (Fixes #35)
+  - Dashboard recommendations now respect agent boundaries
+  - Only suggests shifting work within same agent's sessions
+  - Prevents inappropriate cross-agent recommendations
+  - Example: Won't suggest shifting from Kintaro → Motoko
+  - Shows agent name in recommendations for clarity
+  
+- **Session auto-detection for heartbeat monitoring** (Fixes #36)
+  - Auto-detect current session via `OPENCLAW_SESSION_ID` environment variable
+  - New `--current` flag: `tide-watch check --current`
+  - Implicit auto-detection: `tide-watch check` (when env var set)
+  - JSON output for heartbeat scripting: `tide-watch check --current --json`
+  - Graceful fallback with helpful errors when env var not available
+
+### Changed
+- **Session shift recommendations (multi-agent improvement):**
+  - Before: Suggested ANY low-capacity session (cross-agent)
+  - After: Only suggests same-agent sessions
+  - Single-agent setups: No change (backward compatible)
+  - Multi-agent setups: Better recommendations aligned with agent roles
+
+- **Check command behavior:**
+  - Can now auto-detect current session (when `OPENCLAW_SESSION_ID` set)
+  - Backward compatible: `--session <id>` still works as before
+  - Clearer error messages when auto-detection unavailable
+
+### Technical
+- Updated `getRecommendations()` in `lib/capacity.js`
+  - Group high-capacity sessions by agent
+  - Filter low-capacity sessions by `agentId`
+  - Only recommend same-agent shifts
+  
+- Updated `checkCommand()` in `bin/tide-watch.js`
+  - Read `OPENCLAW_SESSION_ID` environment variable
+  - Support `--current` flag
+  - Use `getAllSessions()` for auto-detected sessions
+  - Enhanced error messages with troubleshooting steps
+
+### Impact
+- **Multi-agent users:** Recommendations respect agent persona boundaries
+- **Single-agent users:** No change (all sessions belong to same agent)
+- **Heartbeat monitoring:** More efficient session capacity checks (when OpenClaw core adds env var support)
+- **Backward compatibility:** All existing commands work unchanged
+
+### Security
+- Both changes assessed as BENIGN (high confidence)
+- No new file access or external operations
+- Read-only environment variable access (safe)
+- Filtering logic improvements only
+
+### Notes
+- Session auto-detection pending OpenClaw core support
+- Feature is implemented and ready when `OPENCLAW_SESSION_ID` is exported
+- Users can manually set env var for testing
+
+---
+
 ## [1.3.3] - 2026-02-28
 
 ### Added
