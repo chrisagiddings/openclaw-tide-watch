@@ -5,6 +5,37 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-28
+
+### Added
+- **Dynamic context limit detection** (Fixes #32)
+  - Three-tier fallback: OpenClaw CLI → Config file → Hardcoded defaults
+  - Automatically detects context limits from `openclaw models list`
+  - Falls back to `~/.openclaw/openclaw.json` models.providers
+  - Enhanced hardcoded defaults for Gemini and Ollama models
+  - Future-proof: automatically picks up new models from OpenClaw
+
+### Changed
+- **Accurate capacity percentages for all models:**
+  - Gemini 2.5 Flash: Now shows 2.1% (was 10.3% - 5x improvement)
+  - Gemini 3.1 Pro: Now shows ~1% (was ~10% - 10x improvement)
+  - qwen2.5:14b: Now shows 14.6% (was 9.4% - now accurate)
+  - Claude Sonnet: Uses actual 195k from OpenClaw (was hardcoded 200k)
+
+### Technical
+- New functions: `getContextFromCLI()`, `getContextFromConfig()`, `getContextFromDefaults()`
+- Enhanced `getModelMaxTokens()` with dynamic detection
+- Hardcoded defaults now include Gemini and Ollama variants
+- Graceful degradation when OpenClaw CLI unavailable
+
+### Impact
+- Users with Gemini models see accurate capacity (not false warnings)
+- Users with Ollama models see correct context limits per model
+- Warnings trigger at correct thresholds for all models
+- No more premature session resets for high-context models
+
+---
+
 ## [1.2.1] - 2026-02-28
 
 ### Fixed
