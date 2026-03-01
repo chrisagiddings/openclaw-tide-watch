@@ -16,6 +16,7 @@ const {
   formatTable,
   formatJSON,
   formatDashboard,
+  formatTokens,
   formatRelativeTime,
   parseTimeString,
   archiveSessions,
@@ -127,7 +128,9 @@ function parseArgs() {
     // Config overrides (CLI flags)
     refreshInterval: null,
     gatewayInterval: null,
-    gatewayTimeout: null
+    gatewayTimeout: null,
+    // Display options
+    rawSize: false
   };
 
   for (let i = 1; i < args.length; i++) {
@@ -173,6 +176,8 @@ function parseArgs() {
       options.agent = args[++i];
     } else if (arg === '--exclude-agent' && i + 1 < args.length) {
       options.excludeAgents.push(args[++i]);
+    } else if (arg === '--raw-size') {
+      options.rawSize = true;
     }
   }
 
@@ -209,7 +214,7 @@ function checkCommand(options) {
       console.log(`Model:   ${session.model}`);
       console.log(`Status:  ${session.status}`);
       console.log(`\nCapacity: ${session.percentage}%`);
-      console.log(`Tokens:   ${session.tokensUsed.toLocaleString()} / ${session.tokensMax.toLocaleString()}`);
+      console.log(`Tokens:   ${formatTokens(session.tokensUsed, session.tokensMax, options.rawSize)}`);
       console.log(`Messages: ${session.messageCount}`);
       console.log(`Last Activity: ${new Date(session.lastActivity).toLocaleString()}\n`);
       
@@ -276,7 +281,7 @@ function reportCommand(options) {
     console.log(formatJSON(sessions, options.pretty));
   } else {
     console.log(`\nTide Watch Report 🌊\n`);
-    console.log(formatTable(sessions));
+    console.log(formatTable(sessions, options.rawSize));
     const filterDesc = options.activeHours ? ` (active in last ${options.activeHours}h)` : '';
     console.log(`\nTotal: ${sessions.length} session(s)${!options.all ? ` above ${options.threshold}%` : ''}${filterDesc}\n`);
   }
@@ -382,7 +387,7 @@ function dashboardCommand(options) {
       }
       
       // Visual dashboard with change highlighting (if available)
-      console.log(formatDashboard(sessions, changes));
+      console.log(formatDashboard(sessions, changes, options.rawSize));
       
       // Show filter info if active
       if (options.activeHours) {
