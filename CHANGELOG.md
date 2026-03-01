@@ -5,6 +5,46 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-28
+
+### Added
+- **Multi-agent session discovery** (Fixes #30)
+  - Auto-discovers all configured agents from `~/.openclaw/openclaw.json`
+  - Unified dashboard showing sessions from all agents
+  - Agent column displays agent name/identity for each session
+  - Per-agent summary with counts and average capacity
+  - Zero configuration needed - auto-discovers from OpenClaw setup
+  - Backward compatible - single-agent users see no change
+
+- **Agent filtering and control**
+  - `--all-agents` flag: Multi-agent mode (default)
+  - `--single-agent-only` flag: Legacy single-agent mode (main agent only)
+  - `--agent <id>` flag: Filter dashboard to specific agent
+  - `--exclude-agent <id>` flag: Exclude specific agent (repeatable)
+
+- **Enhanced dashboard formatting**
+  - Agent column when multi-agent sessions detected
+  - Per-agent summary section with stats
+  - Automatic layout adjustment for multi-agent vs single-agent
+  - Agent metadata display (name, identity)
+
+### Changed
+- `getAllSessions()` now auto-discovers multi-agent setups by default
+- Dashboard adapts layout based on agent detection (backward compatible)
+- Session directory resolution improved to handle multiple path conventions
+
+### Fixed
+- Session directory resolution for agents with `agentDir` ending in `/agent`
+- Handles OpenClaw config path variations gracefully
+- Graceful fallback to main agent if config doesn't exist
+
+### Techincal
+- New functions: `discoverAgents()`, `resolveSessionDir()`, `getSessionsFromDir()`
+- Enhanced `formatDashboard()` with multi-agent layout
+- Robust path resolution with multiple fallback locations
+- All 113 tests pass
+- Zero new dependencies
+
 ## [1.1.6] - 2026-02-28
 
 ### Added

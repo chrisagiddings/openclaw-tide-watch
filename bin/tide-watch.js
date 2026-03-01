@@ -49,6 +49,12 @@ OPTIONS:
   --watch              Live updates (dashboard only, refreshes every 10s)
   --session-dir <path> Custom session directory (default: ~/.openclaw/agents/main/sessions)
   
+MULTI-AGENT:
+  --all-agents              Multi-agent discovery mode (default, auto-discovers from OpenClaw config)
+  --single-agent-only       Single-agent mode (main agent only, disables auto-discovery)
+  --agent <id>              Filter to specific agent
+  --exclude-agent <id>      Exclude specific agent (can be used multiple times)
+
 CONFIGURATION:
   --refresh-interval <seconds>   Dashboard refresh interval (default: 10, min: 1, max: 300)
   --gateway-interval <seconds>   Gateway status check interval (default: 30, min: 5, max: 600)
@@ -110,7 +116,12 @@ function parseArgs() {
     json: false,
     pretty: false,
     watch: false,
-    sessionDir: DEFAULT_SESSION_DIR,
+    sessionDir: null,  // null = auto-discover (not DEFAULT_SESSION_DIR)
+    // Multi-agent options
+    multiAgent: true,
+    singleAgentOnly: false,
+    agent: null,
+    excludeAgents: [],
     // Config overrides (CLI flags)
     refreshInterval: null,
     gatewayInterval: null,
@@ -150,6 +161,16 @@ function parseArgs() {
       options.gatewayInterval = parseInt(args[++i], 10);
     } else if (arg === '--gateway-timeout' && i + 1 < args.length) {
       options.gatewayTimeout = parseInt(args[++i], 10);
+    } else if (arg === '--single-agent-only') {
+      options.singleAgentOnly = true;
+      options.multiAgent = false;
+    } else if (arg === '--all-agents') {
+      options.multiAgent = true;
+      options.singleAgentOnly = false;
+    } else if (arg === '--agent' && i + 1 < args.length) {
+      options.agent = args[++i];
+    } else if (arg === '--exclude-agent' && i + 1 < args.length) {
+      options.excludeAgents.push(args[++i]);
     }
   }
 
@@ -216,7 +237,12 @@ function checkCommand(options) {
  * Report command: List all sessions with capacity info
  */
 function reportCommand(options) {
-  let sessions = getAllSessions(options.sessionDir);
+  let sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+  
+  // Filter by agent if specified
+  if (options.agent) {
+    sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+  }
   
   if (sessions.length === 0) {
     console.log('No sessions found.');
@@ -258,7 +284,12 @@ function reportCommand(options) {
  * Status command: Quick summary
  */
 function statusCommand(options) {
-  const sessions = getAllSessions(options.sessionDir);
+  let sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+  
+  // Filter by agent if specified
+  if (options.agent) {
+    sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+  }
   
   if (sessions.length === 0) {
     console.log('No active sessions.');
@@ -297,7 +328,12 @@ function dashboardCommand(options) {
   let previousSessions = new Map();
   
   const showDashboard = () => {
-    let sessions = getAllSessions(options.sessionDir);
+    let sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+    
+    // Filter by agent if specified
+    if (options.agent) {
+      sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+    }
     
     if (sessions.length === 0) {
       console.log('\nNo active sessions found.\n');
