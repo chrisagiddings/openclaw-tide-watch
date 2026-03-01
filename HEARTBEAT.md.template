@@ -267,9 +267,9 @@ heartbeat_enabled = true  (false if 'manual')
    Removed N old backup(s) (retention: <retention-days> days)
    ```
 
-### Backup Restoration
+### Loading Session Backups
 
-**When user requests session restoration from backup:**
+**When user requests loading a session from backup:**
 
 1. **List available backups:**
    ```bash
@@ -286,7 +286,7 @@ heartbeat_enabled = true  (false if 'manual')
    Which backup would you like to restore?
    ```
 
-3. **Restore selected backup:**
+3. **Load selected backup:**
    ```bash
    # If compressed, decompress first
    gunzip -c ~/.openclaw/agents/main/sessions/backups/<backup-file>.gz \
@@ -297,13 +297,13 @@ heartbeat_enabled = true  (false if 'manual')
       ~/.openclaw/agents/main/sessions/<session-id>.jsonl
    ```
 
-4. **Verify restoration:**
+4. **Verify loaded backup:**
    ```
-   ✅ Session restored from backup
+   ✅ Session loaded from backup
    Backup: <backup-filename>
-   Restored to: <session-file>
+   Loaded to: <session-file>
    
-   Note: Restart OpenClaw gateway or reconnect to load restored session.
+   Note: Restart OpenClaw gateway or reconnect to load the session.
    ```
 
 ### Behavior Notes

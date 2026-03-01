@@ -768,7 +768,7 @@ function resolveSessionInput(input, sessionDir) {
 /**
  * Restore-prompt command: Manage session resumption prompts
  */
-function restorePromptCommand(options) {
+function resumePromptCommand(options) {
   const {
     hasResumePrompt,
     loadResumePrompt,
@@ -1123,7 +1123,7 @@ function main() {
       archiveCommand(options);
       break;
     case 'resume-prompt':
-      restorePromptCommand(options);
+      resumePromptCommand(options);
       break;
     case 'status':
       statusCommand(options);

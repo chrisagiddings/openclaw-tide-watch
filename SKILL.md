@@ -4,7 +4,7 @@ description: Proactive session capacity monitoring and management for OpenClaw. 
 author: Chris Giddings
 homepage: https://github.com/chrisagiddings/openclaw-tide-watch
 repository: https://github.com/chrisagiddings/openclaw-tide-watch
-metadata: {"openclaw":{"emoji":"🌊","version":"1.3.4","disable-model-invocation":false,"capabilities":["session-monitoring","capacity-warnings","session-backup","session-restoration","file-operations-local"],"requires":{"bins":[],"anyBins":["node"],"config":["~/.openclaw/agents/main/sessions/"]},"install":[{"id":"npm","kind":"node","package":".","command":"npm link","bins":["tide-watch"],"label":"Install tide-watch CLI (requires Node.js 14+, optional for Directives-Only mode)"}],"credentials":{"required":false,"types":[],"notes":"No external credentials required. Operates on local OpenClaw session files only."}}}
+metadata: {"openclaw":{"emoji":"🌊","version":"1.3.4","disable-model-invocation":false,"capabilities":["session-monitoring","capacity-warnings","session-backup","session-resumption","multi-agent-support","auto-detection","file-operations-local"],"requires":{"bins":[],"anyBins":["node"],"config":["~/.openclaw/agents/main/sessions/"]},"install":[{"id":"npm","kind":"node","package":".","command":"npm link","bins":["tide-watch"],"label":"Install tide-watch CLI (requires Node.js 14+, optional for Directives-Only mode)"}],"credentials":{"required":false,"types":[],"notes":"No external credentials required. Operates on local OpenClaw session files only."}}}
 ---
 
 # Tide Watch 🌊
@@ -92,14 +92,24 @@ Proactive session capacity monitoring for OpenClaw.
 **Read-Only Operations** (✅ Safe, no modifications):
 - `tide-watch status` - Check current session count
 - `tide-watch check --session <id>` - View specific session capacity
+- `tide-watch check --current` - Auto-detect and check current session (v1.3.4+)
 - `tide-watch dashboard` - Visual capacity overview
+- `tide-watch dashboard --watch` - Live updating dashboard
+- `tide-watch dashboard --raw-size` - Show full precision token counts (v1.3.2+)
 - `tide-watch report` - List sessions above threshold
 - `tide-watch resume-prompt show --session <id>` - View resumption prompt
 
 **Modifying Operations** (⚠️ Moves/creates files):
-- `tide-watch archive --older-than <time>` - Moves sessions to archive/
+- `tide-watch archive --older-than <time>` - Moves sessions to archive/ (time-based)
+- `tide-watch archive --session <id>` - Archive specific session (v1.3.3+)
+- `tide-watch archive --session <id1> --session <id2>` - Archive multiple sessions (v1.3.3+)
 - `tide-watch resume-prompt edit --session <id>` - Opens editor (CVE patched in v1.0.1)
 - `tide-watch resume-prompt delete --session <id>` - Deletes resumption prompt file
+
+**New Flags (v1.3.2+):**
+- `--raw-size` - Show full precision token counts (e.g., `18,713/128,000` instead of `18.7k/128k`)
+- `--current` - Auto-detect current session via `OPENCLAW_SESSION_ID` environment variable (v1.3.4+)
+- `--session` (enhanced) - Supports partial IDs, multiple sessions for archive, labels/channels (v1.3.3+)
 
 **File System Access:**
 - Reads: `~/.openclaw/agents/main/sessions/*.jsonl` (session data)
@@ -107,6 +117,100 @@ Proactive session capacity monitoring for OpenClaw.
 - Moves: `~/.openclaw/agents/main/sessions/archive/` (archived sessions)
 
 **Network Activity:** **NONE** - All operations are local filesystem only.
+
+### CLI Reference
+
+**Complete flag and option documentation:**
+
+**Display Options:**
+- `--raw-size` - Show full precision token counts with commas (v1.3.2+)
+  - Default: Human-readable (e.g., `18.7k/128k`, `20.6k/1M`)
+  - With flag: Full precision (e.g., `18,713/128,000`, `20,631/1,000,000`)
+  - Use case: When exact token counts needed
+  - Example: `tide-watch dashboard --raw-size`
+
+- `--json` - Output as JSON instead of formatted table
+  - Example: `tide-watch check --session abc123 --json`
+  - Useful for scripting and parsing
+
+- `--pretty` - Pretty-print JSON output (requires `--json`)
+  - Example: `tide-watch report --json --pretty`
+
+**Session Selection:**
+- `--session <key>` - Target specific session (enhanced in v1.3.3+)
+  - Full UUID: `--session 17290631-42fe-40c0-bd23-c5da511c6f7b`
+  - Partial UUID: `--session 17290631-4` (v1.3.3+)
+  - Label: `--session "#navi-code-yatta"` (v1.3.3+)
+  - Channel: `--session discord` (v1.3.3+)
+  - Channel + label: `--session "discord/#navi-code"` (v1.3.3+)
+  - Multiple (archive only): `--session abc123 --session def456` (v1.3.3+)
+
+- `--current` - Auto-detect current session (v1.3.4+)
+  - Requires: `OPENCLAW_SESSION_ID` environment variable
+  - Example: `tide-watch check --current`
+  - Use case: Heartbeat monitoring (check THIS session)
+  - Fallback: Graceful error with helpful message if env var not set
+
+**Filtering:**
+- `--all` - Show all sessions regardless of capacity
+- `--threshold <num>` - Filter sessions above percentage (default: 75)
+- `--active <hours>` - Only show sessions active within N hours
+- `--agent <id>` - Filter to specific agent (multi-agent setups)
+- `--exclude-agent <id>` - Exclude specific agent (can use multiple times)
+
+**Archive Options:**
+- `--older-than <time>` - Archive sessions older than time
+  - Examples: `4d`, `2w`, `1mo`, `3months`
+  - Mutually exclusive with `--session`
+  
+- `--dry-run` - Preview archive without making changes
+  - Example: `tide-watch archive --older-than 7d --dry-run`
+
+- `--exclude-channel <name>` - Exclude channel from archiving
+  - Example: `tide-watch archive --older-than 30d --exclude-channel discord`
+
+- `--min-capacity <num>` - Only archive sessions below capacity threshold
+  - Example: `tide-watch archive --older-than 7d --min-capacity 50`
+
+**Live Monitoring:**
+- `--watch` - Live updating dashboard (refreshes every 10s)
+  - Example: `tide-watch dashboard --watch`
+  - Press Ctrl+C to exit
+
+**Multi-Agent:**
+- `--all-agents` - Multi-agent discovery mode (default, auto-discovers agents)
+- `--single-agent-only` - Single-agent mode (main agent only)
+
+**Configuration Override:**
+- `--refresh-interval <seconds>` - Dashboard refresh interval (1-300)
+- `--gateway-interval <seconds>` - Gateway status check interval (5-600)
+- `--gateway-timeout <seconds>` - Gateway command timeout (1-30)
+- `--session-dir <path>` - Custom session directory
+
+**Usage Examples:**
+
+```bash
+# Human-readable vs full precision
+tide-watch dashboard                    # 18.7k/128k (easy to scan)
+tide-watch dashboard --raw-size         # 18,713/128,000 (exact)
+
+# Auto-detect current session (v1.3.4+)
+export OPENCLAW_SESSION_ID="17290631-4"
+tide-watch check --current              # Check THIS session
+tide-watch check --current --json       # JSON for heartbeat scripts
+
+# Session-specific archiving (v1.3.3+)
+tide-watch archive --session abc123 --dry-run    # Preview
+tide-watch archive --session abc123              # Archive one
+tide-watch archive --session a --session b       # Archive multiple
+
+# Partial ID matching (v1.3.3+)
+tide-watch check --session 17290631-4   # Matches 17290631-42fe-40c0-...
+
+# Multi-agent filtering
+tide-watch dashboard --agent kintaro    # Kintaro sessions only
+tide-watch report --exclude-agent main  # All except main
+```
 
 ### Runtime Requirements
 
@@ -228,19 +332,19 @@ I'll:
 3. Provide a session resumption prompt
 4. Reset the session
 
-### Restore from Backup
+### Load Session from Backup
 
-If you need to restore a previous session state:
+If you need to load a previous session state from backup:
 
 ```
 Show me available backups for this session
-Restore session from 90% backup
+Load session from 90% backup
 ```
 
 I'll:
 1. List available backups with timestamps and sizes
-2. Restore the selected backup
-3. Guide you through reconnecting to load the restored session
+2. Load the selected backup
+3. Guide you through reconnecting to load the session
 
 **Backup locations:**
 - Path: `~/.openclaw/agents/main/sessions/backups/`
