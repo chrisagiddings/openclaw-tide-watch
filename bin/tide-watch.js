@@ -29,7 +29,8 @@ const USAGE = `
 Tide Watch 🌊 - OpenClaw Session Capacity Monitor
 
 USAGE:
-  tide-watch check [--session <key>]     Check current or specific session
+  tide-watch check [--session <key>]     Check specific session
+  tide-watch check --current              Auto-detect and check current session
   tide-watch report [--all]               List all sessions (or above threshold)
   tide-watch dashboard                    Visual dashboard with recommendations
   tide-watch archive --older-than <time>  Archive old sessions (time-based)
@@ -42,6 +43,8 @@ OPTIONS:
   --session <key>      Target a specific session (ID, label, channel, or combo)
                        Examples: abc123, "#navi-code-yatta", discord, "discord/#channel"
                        For archive: can be specified multiple times to archive several sessions
+  --current            Auto-detect current session (requires OPENCLAW_SESSION_ID env var)
+                       Use with check command for heartbeat monitoring
   --all                Show all sessions regardless of capacity
   --threshold <num>    Filter sessions above this percentage (default: 75)
   --active <hours>     Only show sessions active within N hours (e.g., --active 24)
@@ -115,6 +118,7 @@ function parseArgs() {
     command: args[0] || 'help',
     session: null,
     sessions: [],  // For archive command: multiple sessions
+    current: false,  // Auto-detect current session
     all: false,
     threshold: 75,
     activeHours: null,
@@ -190,6 +194,8 @@ function parseArgs() {
       options.excludeAgents.push(args[++i]);
     } else if (arg === '--raw-size') {
       options.rawSize = true;
+    } else if (arg === '--current') {
+      options.current = true;
     }
   }
 
@@ -200,15 +206,39 @@ function parseArgs() {
  * Check command: Show capacity for current or specific session
  */
 function checkCommand(options) {
-  if (options.session) {
-    // Resolve session ID
-    const resolvedSessionId = resolveSessionInput(options.session, options.sessionDir);
-    if (!resolvedSessionId) {
+  // Handle --current flag
+  if (options.current && !options.session) {
+    const sessionId = process.env.OPENCLAW_SESSION_ID;
+    
+    if (!sessionId) {
+      console.error('❌ Cannot auto-detect current session');
+      console.error('   OPENCLAW_SESSION_ID environment variable not set');
+      console.error('');
+      console.error('   This feature requires OpenClaw core support (see Issue #36).');
+      console.error('   As a workaround, use --session <key> to specify session explicitly.');
       process.exit(1);
     }
     
-    // Check specific session
-    const session = getSession(resolvedSessionId, options.sessionDir);
+    options.session = sessionId;
+  }
+  
+  if (options.session) {
+    let session;
+    
+    // For auto-detected sessions, search across all agents
+    if (options.current) {
+      const allSessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+      session = allSessions.find(s => s.sessionId === options.session || s.sessionId.startsWith(options.session));
+    } else {
+      // Resolve session ID
+      const resolvedSessionId = resolveSessionInput(options.session, options.sessionDir);
+      if (!resolvedSessionId) {
+        process.exit(1);
+      }
+      
+      // Check specific session
+      session = getSession(resolvedSessionId, options.sessionDir);
+    }
     
     if (!session) {
       console.error(`❌ Session not found: ${resolvedSessionId}`);
@@ -245,10 +275,25 @@ function checkCommand(options) {
       console.log('');
     }
   } else {
-    // TODO: Detect current session from environment or session file
-    console.error('❌ --session <key> required for check command');
-    console.error('   (Auto-detection of current session not yet implemented)');
-    process.exit(1);
+    // Try to auto-detect current session from environment
+    const sessionId = process.env.OPENCLAW_SESSION_ID;
+    
+    if (!sessionId) {
+      console.error('❌ Cannot auto-detect current session');
+      console.error('   Either:');
+      console.error('     1. Use --session <key> to specify session explicitly');
+      console.error('     2. Set OPENCLAW_SESSION_ID environment variable');
+      console.error('     3. Use --current flag explicitly');
+      console.error('');
+      console.error('   Note: Auto-detection requires OpenClaw to export session context.');
+      console.error('         This feature is pending OpenClaw core support (see Issue #36).');
+      process.exit(1);
+    }
+    
+    // Set options and use auto-detection path
+    options.session = sessionId;
+    options.current = true;
+    checkCommand(options);
   }
 }
 
