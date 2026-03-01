@@ -32,7 +32,8 @@ USAGE:
   tide-watch check [--session <key>]     Check current or specific session
   tide-watch report [--all]               List all sessions (or above threshold)
   tide-watch dashboard                    Visual dashboard with recommendations
-  tide-watch archive --older-than <time>  Archive old sessions
+  tide-watch archive --older-than <time>  Archive old sessions (time-based)
+  tide-watch archive --session <id>       Archive specific session(s)
   tide-watch resume-prompt <action>      Manage session resumption prompts
   tide-watch status                       Quick status summary
   tide-watch help                         Show this help
@@ -40,6 +41,7 @@ USAGE:
 OPTIONS:
   --session <key>      Target a specific session (ID, label, channel, or combo)
                        Examples: abc123, "#navi-code-yatta", discord, "discord/#channel"
+                       For archive: can be specified multiple times to archive several sessions
   --all                Show all sessions regardless of capacity
   --threshold <num>    Filter sessions above this percentage (default: 75)
   --active <hours>     Only show sessions active within N hours (e.g., --active 24)
@@ -79,6 +81,9 @@ EXAMPLES:
   tide-watch archive --older-than 4d --dry-run    # Preview archiving sessions older than 4 days
   tide-watch archive --older-than 2w              # Archive sessions older than 2 weeks
   tide-watch archive --older-than 1mo --exclude-channel discord  # Archive but keep Discord
+  tide-watch archive --session abc123             # Archive specific session by ID
+  tide-watch archive --session "#navi-code"       # Archive specific session by label
+  tide-watch archive --session abc123 --session def456  # Archive multiple sessions
   tide-watch resume-prompt edit                  # Edit resumption prompt for current session
   tide-watch resume-prompt show                  # Show current resumption prompt
   tide-watch resume-prompt list                  # List all resumption prompts
@@ -109,6 +114,7 @@ function parseArgs() {
   const options = {
     command: args[0] || 'help',
     session: null,
+    sessions: [],  // For archive command: multiple sessions
     all: false,
     threshold: 75,
     activeHours: null,
@@ -137,7 +143,13 @@ function parseArgs() {
     const arg = args[i];
     
     if (arg === '--session' && i + 1 < args.length) {
-      options.session = args[++i];
+      const sessionValue = args[++i];
+      // For archive command: support multiple --session flags
+      if (options.command === 'archive') {
+        options.sessions.push(sessionValue);
+      }
+      // For other commands: single session only
+      options.session = sessionValue;
     } else if (arg === '--all') {
       options.all = true;
     } else if (arg === '--threshold' && i + 1 < args.length) {
@@ -459,41 +471,110 @@ function computeChanges(previous, current) {
  * Archive command: Move old sessions to archive directory
  */
 function archiveCommand(options) {
-  // Validate required options
-  if (!options.olderThan) {
-    console.error('❌ --older-than <time> is required for archive command');
-    console.error('   Example: tide-watch archive --older-than 4d');
+  // Validate: need either --older-than OR --session (not both, not neither)
+  const hasOlderThan = !!options.olderThan;
+  const hasSessions = options.sessions && options.sessions.length > 0;
+  
+  if (!hasOlderThan && !hasSessions) {
+    console.error('❌ Either --older-than <time> OR --session <id> is required');
+    console.error('   Examples:');
+    console.error('     tide-watch archive --older-than 4d');
+    console.error('     tide-watch archive --session abc123');
+    console.error('     tide-watch archive --session abc123 --session def456');
     process.exit(1);
   }
-
-  // Parse time string
-  let hours;
-  try {
-    hours = parseTimeString(options.olderThan);
-  } catch (error) {
-    console.error(`❌ ${error.message}`);
+  
+  if (hasOlderThan && hasSessions) {
+    console.error('❌ Cannot use --session with --older-than (conflicting criteria)');
+    console.error('   Use one or the other, not both');
     process.exit(1);
   }
-
-  // Get all sessions (multi-agent support)
-  let sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
   
-  // Filter by agent if specified
-  if (options.agent) {
-    sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+  let sessions;
+  
+  // Mode 1: Session-specific archiving
+  if (hasSessions) {
+    // Get all sessions first (needed for multi-agent support)
+    const allSessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+    
+    sessions = [];
+    
+    for (const sessionInput of options.sessions) {
+      let session = null;
+      
+      // Try direct UUID match first (full ID)
+      session = allSessions.find(s => s.sessionId === sessionInput);
+      
+      // Try partial UUID match (starts with input)
+      if (!session && /^[0-9a-f-]+$/.test(sessionInput)) {
+        const matches = allSessions.filter(s => s.sessionId.startsWith(sessionInput));
+        if (matches.length === 1) {
+          session = matches[0];
+        } else if (matches.length > 1) {
+          console.error(`❌ Ambiguous session ID: ${sessionInput} matches ${matches.length} sessions:`);
+          matches.slice(0, 5).forEach(m => {
+            console.error(`   ${m.sessionId} (${m.channel}${m.label ? '/' + m.label : ''})`);
+          });
+          if (matches.length > 5) {
+            console.error(`   ... and ${matches.length - 5} more`);
+          }
+          process.exit(1);
+        }
+      }
+      
+      // Try resolving by label/channel if not a UUID pattern
+      if (!session) {
+        const resolvedId = resolveSessionInput(sessionInput, options.sessionDir);
+        if (resolvedId) {
+          session = allSessions.find(s => s.sessionId === resolvedId);
+        }
+      }
+      
+      if (!session) {
+        console.error(`❌ Session not found: ${sessionInput}`);
+        process.exit(1);
+      }
+      
+      sessions.push(session);
+    }
+    
+    if (sessions.length === 0) {
+      console.log('No sessions to archive.');
+      return;
+    }
   }
   
-  if (sessions.length === 0) {
-    console.log('No sessions found.');
-    return;
-  }
+  // Mode 2: Time-based archiving (existing behavior)
+  else if (hasOlderThan) {
+    // Parse time string
+    let hours;
+    try {
+      hours = parseTimeString(options.olderThan);
+    } catch (error) {
+      console.error(`❌ ${error.message}`);
+      process.exit(1);
+    }
 
-  // Filter to sessions older than threshold
-  sessions = getSessionsOlderThan(sessions, hours);
-  
-  if (sessions.length === 0) {
-    console.log(`No sessions older than ${options.olderThan}.`);
-    return;
+    // Get all sessions (multi-agent support)
+    sessions = getAllSessions(options.sessionDir, options.multiAgent, options.excludeAgents);
+    
+    // Filter by agent if specified
+    if (options.agent) {
+      sessions = sessions.filter(s => s.agentId === options.agent || s.agentName === options.agent);
+    }
+    
+    if (sessions.length === 0) {
+      console.log('No sessions found.');
+      return;
+    }
+
+    // Filter to sessions older than threshold
+    sessions = getSessionsOlderThan(sessions, hours);
+    
+    if (sessions.length === 0) {
+      console.log(`No sessions older than ${options.olderThan}.`);
+      return;
+    }
   }
 
   // Apply exclusion filters
@@ -511,10 +592,19 @@ function archiveCommand(options) {
   }
 
   // Show what will be/was archived
-  if (options.dryRun) {
-    console.log(`\n${options.dryRun ? 'Would archive' : 'Archiving'} ${sessions.length} session(s) older than ${options.olderThan}:\n`);
+  let archiveDescription;
+  if (hasSessions) {
+    archiveDescription = sessions.length === 1 
+      ? 'specified session' 
+      : `${sessions.length} specified session(s)`;
   } else {
-    console.log(`\nArchiving ${sessions.length} session(s) older than ${options.olderThan}...\n`);
+    archiveDescription = `${sessions.length} session(s) older than ${options.olderThan}`;
+  }
+  
+  if (options.dryRun) {
+    console.log(`\nWould archive ${archiveDescription}:\n`);
+  } else {
+    console.log(`\nArchiving ${archiveDescription}...\n`);
   }
 
   // Display table of sessions to archive

@@ -5,6 +5,37 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-02-28
+
+### Added
+- **Session-specific archiving** (Fixes #34)
+  - Archive specific sessions by ID: `tide-watch archive --session abc123`
+  - Archive multiple sessions: `tide-watch archive --session abc123 --session def456`
+  - Partial ID matching: `--session 595765f8-c` matches full UUID
+  - Works with labels: `--session "#navi-code-yatta"`
+  - Works with channels: `--session discord`
+  - Supports `--dry-run` for preview
+
+### Changed
+- **Archive command now supports two modes:**
+  - Time-based: `--older-than <time>` (existing behavior)
+  - Session-specific: `--session <id>` (new)
+  - Mutually exclusive: cannot use both together
+  - One is required: must specify either `--older-than` OR `--session`
+
+### Technical
+- Enhanced session resolution with partial UUID matching
+- Validates conflicting flags (--session + --older-than)
+- Multi-agent support for session-specific archiving
+- Updated help text and examples
+
+### Impact
+- Selective archiving after saving specific sessions to memory
+- Archive completed project sessions regardless of age
+- More control over which sessions to archive
+
+---
+
 ## [1.3.2] - 2026-02-28
 
 ### Added
