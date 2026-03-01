@@ -5,6 +5,39 @@ All notable changes to Tide Watch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-03-01
+
+### Fixed
+- **Terminology: Resume vs Restore** (Issue #37)
+  - Changed `restorePromptCommand` → `resumePromptCommand` in code
+  - "Resume" = session resumption prompts (context loading)
+  - "Restore" = OpenClaw trigger word (loads from backup/archive)
+  - Using "restore" in Tide Watch caused unintended OpenClaw behavior
+  - Updated HEARTBEAT.md.template: "Backup Restoration" → "Loading Session Backups"
+  - Updated SKILL.md: "Restore from Backup" → "Load Session from Backup"
+
+### Added
+- **Comprehensive CLI documentation** (Issue #37)
+  - New CLI Reference section with all flags and options
+  - Documented `--raw-size` flag (added in v1.3.2)
+  - Documented `--current` flag (added in v1.3.4)
+  - Documented enhanced `--session` (partial IDs, multiple sessions, added in v1.3.3)
+  - Usage examples for all new features
+  - Version tags on new features (v1.3.2+, v1.3.3+, v1.3.4+)
+
+### Changed
+- **Frontmatter metadata** (Issue #37)
+  - Capability: "session-restoration" → "session-resumption"
+  - Added capabilities: "multi-agent-support", "auto-detection"
+
+### Impact
+- Prevents OpenClaw restore trigger confusion
+- Complete documentation for CLI flags added in v1.3.2-v1.3.4
+- Clear examples for all new features
+- Proper capability tagging
+
+---
+
 ## [1.3.4] - 2026-03-01
 
 ### Added
